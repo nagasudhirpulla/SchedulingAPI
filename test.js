@@ -10,11 +10,57 @@ function findAll() {
     });
 }
 
+function create(){
+    console.log('createOne');
+    $.ajax({
+        type: 'POST',
+        url: rootURL,
+        dataType: "json", // data type of response
+        data:"name="+document.getElementById("input").value,
+        success: function(data, textStatus, jqXHR){
+            alert('Name created successfully with id '+JSON.stringify(data));
+        },
+        error: function(jqXHR, textStatus, errorThrown){
+            alert('addName error: ' + textStatus);
+        }
+    });
+}
+
+function updateName() {
+    $.ajax({
+        type: 'PUT',
+        contentType: 'application/json',
+        url: rootURL+'/1',
+        dataType: "json",
+        data: JSON.stringify({namestr:document.getElementById("input").value,updatenamestr:document.getElementById("updateinput").value}),
+        success: function(data, textStatus, jqXHR){
+            alert('Name updated successfully');
+        },
+        error: function(jqXHR, textStatus, errorThrown){
+            alert('updateName error: ' + textStatus);
+        }
+    });
+}
+
+function deleteName() {
+    console.log('deleteName');
+    $.ajax({
+        type: 'DELETE',
+        url: rootURL + '/' + document.getElementById("input").value,
+        success: function(data, textStatus, jqXHR){
+            alert('Name deleted successfully');
+        },
+        error: function(jqXHR, textStatus, errorThrown){
+            alert('deleteName error');
+        }
+    });
+}
+
 function find(){
     console.log('findOne');
     $.ajax({
         type: 'GET',
-        url: rootURL+document.getElementById("input").value,
+        url: rootURL+"/"+document.getElementById("input").value,
         dataType: "json", // data type of response
         success: renderList
     });

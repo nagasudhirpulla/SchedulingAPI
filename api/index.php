@@ -1,8 +1,8 @@
 <?php
 
-require_once 'dbtest.php';
+require_once '../dbtest.php';
 
-require 'Slim/Slim.php';
+require '../Slim/Slim.php';
 
 \Slim\Slim::registerAutoloader();
 
@@ -128,10 +128,9 @@ $app->get('/names/:name', function($name) {
  * Updating existing name
  * method PUT
  * params name
- * url - /tasks/:id
+ * url - /names/:id
  */
 $app->put('/names/:id', function($id) use($app) {
-
     echoRespnse(200, $id);
 });
 
@@ -164,6 +163,8 @@ function deleteName($name) {
 }
 
 header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: PUT, GET, POST, DELETE, OPTIONS');
+header("Access-Control-Allow-Headers: Origin, HTTP_X_REQUESTED_WITH, Content-Type, Accept, Authorization");
 $app->run();
 
 ?>

@@ -1,5 +1,5 @@
 // The root URL for the RESTful services
-var rootURL = "http://localhost/apinew.php/names";
+var rootURL = "http://localhost/api/names";
 function findAll() {
     console.log('findAll');
     $.ajax({

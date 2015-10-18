@@ -32,9 +32,10 @@ function updateName() {
         contentType: 'application/json',
         url: rootURL+'/1',
         dataType: "json",
-        data: JSON.stringify({namestr:document.getElementById("input").value,updatenamestr:document.getElementById("updateinput").value}),
+        data: "name="+document.getElementById("input").value+"&updatename="+document.getElementById("updateinput").value,
+        //data : JSON.stringify({name:document.getElementById("input").value,updatename:document.getElementById("updateinput").value}),
         success: function(data, textStatus, jqXHR){
-            alert('Name updated successfully');
+            alert('Name updated successfully.Number of rows updated are '+JSON.stringify(data));
         },
         error: function(jqXHR, textStatus, errorThrown){
             alert('updateName error: ' + textStatus);

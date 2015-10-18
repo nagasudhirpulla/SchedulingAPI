@@ -55,6 +55,10 @@ class DbHandler {
         //$this->echoAllConstituentNames();
     }
 
+    function getConn(){
+        return $this->conn;
+    }
+
     /**
      * Fetching all Constituent Names
      * @param none

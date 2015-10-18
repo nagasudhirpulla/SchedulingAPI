@@ -131,7 +131,44 @@ $app->get('/names/:name', function($name) {
  * url - /names/:id
  */
 $app->put('/names/:id', function($id) use($app) {
-    echoRespnse(200, $id);
+    // check for required params
+    verifyRequiredParams(array('name','updatename'));
+    $response = array();
+    $name = $app->request->put('name');
+    $updatename = $app->request->put('updatename');
+
+    $db = new DbHandler();
+
+    // creating new name
+    $num_rows = $db->updateAConstituentName($name,$updatename);
+
+    if ($num_rows != NULL) {
+        $response["error"] = false;
+        $response["message"] = "Name updated successfully";
+        $response["name_id"] = $num_rows;
+        echoRespnse(201, $response);
+    } else {
+        $response["error"] = true;
+        $response["message"] = "Failed to UPDATE name. Please try again";
+        echoRespnse(200, $response);
+    }
+    /*$request = $app->request();
+    $body = $request->getBody();
+    $wine = json_decode($body);
+    //$sql = "UPDATE wine SET name=:name, grapes=:grapes, country=:country, region=:region, year=:year, description=:description WHERE id=:id";
+    $sql = "UPDATE constituents SET name=:updatename WHERE name=:oname";
+    try {
+        $db = new DbHandler();
+        $db = $db->getConn();
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam("oname", $wine->name);
+        $stmt->bindParam("updatename", $wine->updatename);
+        $stmt->execute();
+        $db = null;
+        echo json_encode($wine);
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }*/
 });
 
 /**
@@ -162,9 +199,11 @@ function deleteName($name) {
     echoRespnse(200, $response);
 }
 
+/*
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: PUT, GET, POST, DELETE, OPTIONS');
 header("Access-Control-Allow-Headers: Origin, HTTP_X_REQUESTED_WITH, Content-Type, Accept, Authorization");
+*/
 $app->run();
 
 ?>

@@ -40,19 +40,14 @@ function verifyRequiredParams($required_fields) {
     $error = false;
     $error_fields = "";
     $request_params = array();
-    $request_params = $_REQUEST;
-    // Handling PUT request params
-    if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
-        $app = \Slim\Slim::getInstance();
-        parse_str($app->request()->getBody(), $request_params);
-    }
+    $app = \Slim\Slim::getInstance();
+    $request_params = json_decode($app->request()->getBody());
     foreach ($required_fields as $field) {
-        if (!isset($request_params[$field]) || strlen(trim($request_params[$field])) <= 0) {
+        if (!isset($request_params->$field) || strlen(trim($request_params->$field)) <= 0) {
             $error = true;
             $error_fields .= $field . ', ';
         }
     }
-
     if ($error) {
         // Required field(s) are missing or empty
         // echo error json and stop the app
@@ -108,7 +103,7 @@ function createAName(){
     // check for required params
     verifyRequiredParams(array('name'));
     $response = array();
-    $name = $app->request->post('name');
+    $name = json_decode($app->request()->getBody())->name;
     $db = new DbHandler();
     // creating new name
     $name_id = $db->createAConstituentName($name);
@@ -159,9 +154,9 @@ function updateAName() {
     // check for required params
     verifyRequiredParams(array('name','updatename'));
     $response = array();
-    parse_str($app->request()->getBody(), $request_params);
-    $name = $request_params['name'];
-    $updatename = $request_params['updatename'];
+    $request_params = json_decode($app->request()->getBody());
+    $name = $request_params->name;
+    $updatename = $request_params->updatename;
     $db = new DbHandler();
     // updating name
     $num_rows = $db->updateAConstituentName($name,$updatename);

@@ -16,7 +16,8 @@ function createName(){
         type: 'POST',
         url: rootURL,
         dataType: "json", // data type of response
-        data:"name="+document.getElementById("input").value,
+        //data:"name="+document.getElementById("input").value,
+        data:JSON.stringify({'name':document.getElementById("input").value}),
         success: function(data, textStatus, jqXHR){
             alert('Name created successfully with id '+JSON.stringify(data));
         },
@@ -32,8 +33,8 @@ function updateName() {
         contentType: 'application/json',
         url: rootURL,
         dataType: "json",
-        data: "name="+document.getElementById("input").value+"&updatename="+document.getElementById("updateinput").value,
-        //data : JSON.stringify({name:document.getElementById("input").value,updatename:document.getElementById("updateinput").value}),
+        //data: "name="+document.getElementById("input").value+"&updatename="+document.getElementById("updateinput").value,
+        data : JSON.stringify({'name':document.getElementById("input").value,'updatename':document.getElementById("updateinput").value}),
         success: function(data, textStatus, jqXHR){
             alert('Name updated successfully.Number of rows updated are '+JSON.stringify(data));
         },

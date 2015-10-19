@@ -122,9 +122,9 @@ class DbHandler {
         $stmt = $this->conn->prepare($sql);
         $stmt->bind_param("s", $namestr);
         $stmt->execute();
-        $tasks = $stmt->get_result();
+        $names = $stmt->get_result();
         $stmt->close();
-        return $tasks;
+        return $names;
     }
 
     /**

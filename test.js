@@ -10,7 +10,7 @@ function findAll() {
     });
 }
 
-function create(){
+function createName(){
     console.log('createOne');
     $.ajax({
         type: 'POST',
@@ -57,7 +57,7 @@ function deleteName() {
     });
 }
 
-function find(){
+function findName(){
     console.log('findOne');
     $.ajax({
         type: 'GET',

@@ -8,34 +8,29 @@ require '../Slim/Slim.php';
 
 $app = new \Slim\Slim();
 
-$app->get('/', function() {
-    echo("Running");
-});
+$app->get('/','getHome');
+$app->get('/names','getAllNames');
+$app->post('/names','createAName');
+$app->get('/names/:name','getAName');
+$app->put('/names/:id', 'updateAName');
+$app->delete('/names/:name','deleteName');
+
 
 /**
- * Listing all tasks of particual user
- * method GET
- * url /tasks
+ * Echoing json response to client
+ * @param String $status_code Http response code
+ * @param Array $response Json response
  */
-$app->get('/names', function() {
-    $response = array();
-    $db = new DbHandler();
+function echoResponse($status_code, $response) {
+    $app = \Slim\Slim::getInstance();
+    // Http response code
+    $app->status($status_code);
 
-    // fetching all user tasks
-    $result = $db->getAllConstituentNames();
+    // setting response content type to json
+    $app->contentType('application/json');
 
-    $response["error"] = false;
-    $response["names"] = array();
-
-    // looping through result and preparing tasks array
-    while ($task = $result->fetch_assoc()) {
-        $tmp = array();
-        $tmp["id"] = $task["id"];
-        $tmp["name"] = $task["name"];
-        array_push($response["names"], $tmp);
-    }
-    echoRespnse(200, $response);
-});
+    echo json_encode($response);
+}
 
 /**
  * Verifying required params posted or not
@@ -64,73 +59,101 @@ function verifyRequiredParams($required_fields) {
         $app = \Slim\Slim::getInstance();
         $response["error"] = true;
         $response["message"] = 'Required field(s) ' . substr($error_fields, 0, -2) . ' is missing or empty';
-        echoRespnse(400, $response);
+        echoResponse(400, $response);
         $app->stop();
     }
 }
 
 /**
- * Creating new USER in db
- * method POST
- * params - name
- * url - /names/
+ * Checking if the API is responding
  */
-$app->post('/names', function() use ($app) {
-    // check for required params
-    verifyRequiredParams(array('name'));
+function getHome() {
     $response = array();
-    $name = $app->request->post('name');
-
-    $db = new DbHandler();
-
-    // creating new name
-    $name_id = $db->createAConstituentName($name);
-
-    if ($name_id != NULL) {
-        $response["error"] = false;
-        $response["message"] = "Task created successfully";
-        $response["name_id"] = $name_id;
-        echoRespnse(201, $response);
-    } else {
-        $response["error"] = true;
-        $response["message"] = "Failed to create task. Please try again";
-        echoRespnse(200, $response);
-    }
-});
-
+    $response["error"] = false;
+    $response["message"] = 'API Responding!!!';
+    echoResponse(200, $response);
+}
 
 /**
- * Checking a particuar name
+ * Listing all names of the user database
  * method GET
- * url /tasks
+ * url /names
  */
-$app->get('/names/:name', function($name) {
+function getAllNames() {
     $response = array();
     $db = new DbHandler();
-
-    // fetching all user tasks
-    $result = $db->checkAConstituentName($name);
-
+    // fetching all names
+    $result = $db->getAllConstituentNames();
     $response["error"] = false;
     $response["names"] = array();
-
-    // looping through result and preparing tasks array
+    // looping through result and preparing names array
     while ($task = $result->fetch_assoc()) {
         $tmp = array();
         $tmp["id"] = $task["id"];
         $tmp["name"] = $task["name"];
         array_push($response["names"], $tmp);
     }
-    echoRespnse(200, $response);
-});
+    echoResponse(200, $response);
+}
 
 /**
- * Updating existing name
+ * Creating new user in db
+ * method POST
+ * params - name
+ * url - /names/
+ */
+function createAName(){
+    $app = \Slim\Slim::getInstance();
+    // check for required params
+    verifyRequiredParams(array('name'));
+    $response = array();
+    $name = $app->request->post('name');
+    $db = new DbHandler();
+    // creating new name
+    $name_id = $db->createAConstituentName($name);
+    if ($name_id != NULL) {
+        $response["error"] = false;
+        $response["message"] = "Task created successfully";
+        $response["name_id"] = $name_id;
+        echoResponse(201, $response);
+    } else {
+        $response["error"] = true;
+        $response["message"] = "Failed to create task. Please try again";
+        echoResponse(200, $response);
+    }
+}
+
+/**
+ * Checking a particular name
+ * params none
+ * method GET
+ * url /names/name
+ */
+function getAName($name) {
+    $response = array();
+    $db = new DbHandler();
+    // fetching all users with a particular name
+    $result = $db->checkAConstituentName($name);
+    $response["error"] = false;
+    $response["names"] = array();
+    // looping through result and preparing names array
+    while ($task = $result->fetch_assoc()) {
+        $tmp = array();
+        $tmp["id"] = $task["id"];
+        $tmp["name"] = $task["name"];
+        array_push($response["names"], $tmp);
+    }
+    echoResponse(200, $response);
+}
+
+/**
+ * Updating an existing name
  * method PUT
- * params name
+ * params name,updatename
  * url - /names/:id
  */
-$app->put('/names/:id', function($id) use($app) {
+function updateAName($id) {
+    $app = \Slim\Slim::getInstance();
     // check for required params
     verifyRequiredParams(array('name','updatename'));
     $response = array();
@@ -138,65 +161,34 @@ $app->put('/names/:id', function($id) use($app) {
     $name = $request_params['name'];
     $updatename = $request_params['updatename'];
     $db = new DbHandler();
-
-    // creating new name
+    // updating name
     $num_rows = $db->updateAConstituentName($name,$updatename);
-
     if ($num_rows != NULL) {
         $response["error"] = false;
         $response["message"] = "Name updated successfully";
-        $response["name_id"] = $num_rows;
-        echoRespnse(201, $response);
+        $response["num_rows"] = $num_rows;
+        echoResponse(201, $response);
     } else {
         $response["error"] = true;
-        $response["message"] = "Failed to UPDATE name. Please try again";
-        echoRespnse(200, $response);
+        $response["message"] = "Failed to update name. Please try again";
+        echoResponse(200, $response);
     }
-    /*$request = $app->request();
-    $body = $request->getBody();
-    $wine = json_decode($body);
-    //$sql = "UPDATE wine SET name=:name, grapes=:grapes, country=:country, region=:region, year=:year, description=:description WHERE id=:id";
-    $sql = "UPDATE constituents SET name=:updatename WHERE name=:oname";
-    try {
-        $db = new DbHandler();
-        $db = $db->getConn();
-        $stmt = $db->prepare($sql);
-        $stmt->bindParam("oname", $wine->name);
-        $stmt->bindParam("updatename", $wine->updatename);
-        $stmt->execute();
-        $db = null;
-        echo json_encode($wine);
-    } catch(PDOException $e) {
-        echo '{"error":{"text":'. $e->getMessage() .'}}';
-    }*/
-});
-
-/**
- * Echoing json response to client
- * @param String $status_code Http response code
- * @param Array $response Json response
- */
-function echoRespnse($status_code, $response) {
-    $app = \Slim\Slim::getInstance();
-    // Http response code
-    $app->status($status_code);
-
-    // setting response content type to json
-    $app->contentType('application/json');
-
-    echo json_encode($response);
 }
 
-$app->delete('/names/:name','deleteName');
+/**
+ * Deleting an existing name
+ * method DELETE
+ * params none
+ * url - /names/:id
+ */
 function deleteName($name) {
     $response = array();
     $db = new DbHandler();
-
-    // fetching all user tasks
-    $result = $db->deleteAConstituentName($name);
+    $num_rows = $db->deleteAConstituentName($name);
     $response["error"] = false;
     $response["message"] = 'Deleted the name';
-    echoRespnse(200, $response);
+    $response["num_rows"] = $num_rows;
+    echoResponse(200, $response);
 }
 
 /*
@@ -205,5 +197,4 @@ header('Access-Control-Allow-Methods: PUT, GET, POST, DELETE, OPTIONS');
 header("Access-Control-Allow-Headers: Origin, HTTP_X_REQUESTED_WITH, Content-Type, Accept, Authorization");
 */
 $app->run();
-
 ?>

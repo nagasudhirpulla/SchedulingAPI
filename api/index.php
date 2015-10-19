@@ -12,7 +12,7 @@ $app->get('/','getHome');
 $app->get('/names','getAllNames');
 $app->post('/names','createAName');
 $app->get('/names/:name','getAName');
-$app->put('/names/:id', 'updateAName');
+$app->put('/names', 'updateAName');
 $app->delete('/names/:name','deleteAName');
 
 
@@ -154,7 +154,7 @@ function getAName($name) {
  * params name,updatename
  * url - /names/:id
  */
-function updateAName($id) {
+function updateAName() {
     $app = \Slim\Slim::getInstance();
     // check for required params
     verifyRequiredParams(array('name','updatename'));

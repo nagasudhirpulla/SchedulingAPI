@@ -30,7 +30,7 @@ function updateName() {
     $.ajax({
         type: 'PUT',
         contentType: 'application/json',
-        url: rootURL+'/1',
+        url: rootURL,
         dataType: "json",
         data: "name="+document.getElementById("input").value+"&updatename="+document.getElementById("updateinput").value,
         //data : JSON.stringify({name:document.getElementById("input").value,updatename:document.getElementById("updateinput").value}),

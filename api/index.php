@@ -34,6 +34,7 @@ function echoResponse($status_code, $response) {
 
 /**
  * Verifying required params posted or not
+ * @param Array $required_fields Fields to check
  */
 function verifyRequiredParams($required_fields) {
     $error = false;
@@ -125,7 +126,7 @@ function createAName(){
 
 /**
  * Checking a particular name
- * params none
+ * @param String $name nameString of User in database
  * method GET
  * url /names/name
  */
@@ -149,6 +150,7 @@ function getAName($name) {
 /**
  * Updating an existing name
  * method PUT
+ * @param Number $id id of the name in Databse
  * params name,updatename
  * url - /names/:id
  */
@@ -178,6 +180,7 @@ function updateAName($id) {
 /**
  * Deleting an existing name
  * method DELETE
+ * @param String $name Name of the user to delete from database
  * params none
  * url - /names/:id
  */

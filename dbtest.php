@@ -169,6 +169,70 @@ class DbHandler {
         return $num_affected_rows;
     }
 
+    /**
+     * Fetching all Generator Names
+     * @param none
+     */
+    public function getAllGeneratorNames() {
+        $sql = "SELECT id, name FROM generators ORDER BY generators.name ASC";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        $tasks = $stmt->get_result();
+        $stmt->close();
+        return $tasks;
+    }
+
+    /**
+     * Creating a Generator Name
+     * @param String $namestr of Constituent
+     */
+    public function createAGeneratorName($name,$ramp,$dc,$onbar) {
+        $sql = "INSERT INTO generators(name,ramp,dc,onbar) VALUES (?,?,?,?)";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("ssss", $name,$ramp,$dc,$onbar);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result) {
+            // Constituent name creation failed
+            $stmt->close();
+            return NULL;
+        } else {
+            // Constituent name created
+            $stmt->close();
+            return $this->conn->insert_id;
+        }
+
+    }
+
+    /**
+     * Fetching a particular Generator Name data
+     * @param none
+     */
+    public function fetchAGeneratorName($namestr) {
+        $sql = "SELECT * FROM generators WHERE name=?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("s", $namestr);
+        $stmt->execute();
+        $names = $stmt->get_result();
+        $stmt->close();
+        return $names;
+    }
+
+    /**
+     * Delete a Generator Name
+     * @param String $namestr of Generator
+     */
+    public function deleteAGeneratorName($namestr) {
+        $sql = "DELETE FROM `generators` WHERE name=?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("s", $namestr);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows;
+    }
+
 }
 
 ?>

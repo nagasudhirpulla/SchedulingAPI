@@ -14,7 +14,10 @@ $app->post('/names','createAName');
 $app->get('/names/:name','getAName');
 $app->put('/names', 'updateAName');
 $app->delete('/names/:name','deleteAName');
-
+$app->get('/generators','getAllGenerators');
+$app->post('/generators','createAGenerator');
+$app->get('/generators/:name','getAGenerator');
+$app->delete('/generators/:name','deleteAGenerator');
 
 /**
  * Echoing json response to client
@@ -189,6 +192,97 @@ function deleteAName($name) {
     echoResponse(200, $response);
 }
 
+/**
+ * Listing all names of the generator database
+ * method GET
+ * url /names
+ */
+function getAllGenerators() {
+    $response = array();
+    $db = new DbHandler();
+    // fetching all names
+    $result = $db->getAllGeneratorNames();
+    $response["error"] = false;
+    $response["names"] = array();
+    // looping through result and preparing names array
+    while ($task = $result->fetch_assoc()) {
+        $tmp = array();
+        $tmp["id"] = $task["id"];
+        $tmp["name"] = $task["name"];
+        array_push($response["names"], $tmp);
+    }
+    echoResponse(200, $response);
+}
+
+/**
+ * Checking a particular name
+ * @param String $name nameString of User in database
+ * method GET
+ * url /names/name
+ */
+function getAGenerator($name) {
+    $response = array();
+    $db = new DbHandler();
+    // fetching all users with a particular name
+    $result = $db->fetchAGeneratorName($name);
+    $response["error"] = false;
+    // looping through result and preparing names array
+    while ($task = $result->fetch_assoc()) {
+        $response["id"] = $task["id"];
+        $response["name"] = $task["name"];
+        $response["ramp"] = $task["ramp"];
+        $response["dc"] = $task["dc"];
+        $response["onbar"] = $task["onbar"];
+    }
+    echoResponse(200, $response);
+}
+
+/**
+ * Creating new generator in db
+ * method POST
+ * params - name
+ * url - /generators/
+ */
+function createAGenerator(){
+    $app = \Slim\Slim::getInstance();
+    // check for required params
+    verifyRequiredParams(array('name','ramp','dc','onbar'));
+    $response = array();
+    $name = json_decode($app->request()->getBody())->name;
+    $ramp = json_decode($app->request()->getBody())->ramp;
+    $dc = json_decode($app->request()->getBody())->dc;
+    $onbar = json_decode($app->request()->getBody())->onbar;
+    $db = new DbHandler();
+    // creating new name
+    $gen_id = $db->createAGeneratorName($name,$ramp,$dc,$onbar);
+    if ($gen_id != NULL) {
+        $response["error"] = false;
+        $response["message"] = "Generator created successfully";
+        $response["name_id"] = $gen_id;
+        echoResponse(201, $response);
+    } else {
+        $response["error"] = true;
+        $response["message"] = "Failed to create generator. Please try again";
+        echoResponse(200, $response);
+    }
+}
+
+/**
+ * Deleting an existing generator
+ * method DELETE
+ * @param String $name Name of the generator to delete from database
+ * params none
+ * url - /generators/:id
+ */
+function deleteAGenerator($name) {
+    $response = array();
+    $db = new DbHandler();
+    $num_rows = $db->deleteAGeneratorName($name);
+    $response["error"] = false;
+    $response["message"] = 'Deleted the name';
+    $response["num_rows"] = $num_rows;
+    echoResponse(200, $response);
+}
 /*
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: PUT, GET, POST, DELETE, OPTIONS');

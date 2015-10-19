@@ -13,7 +13,7 @@ $app->get('/names','getAllNames');
 $app->post('/names','createAName');
 $app->get('/names/:name','getAName');
 $app->put('/names/:id', 'updateAName');
-$app->delete('/names/:name','deleteName');
+$app->delete('/names/:name','deleteAName');
 
 
 /**
@@ -184,7 +184,7 @@ function updateAName($id) {
  * params none
  * url - /names/:id
  */
-function deleteName($name) {
+function deleteAName($name) {
     $response = array();
     $db = new DbHandler();
     $num_rows = $db->deleteAConstituentName($name);

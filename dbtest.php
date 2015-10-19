@@ -64,7 +64,7 @@ class DbHandler {
      * @param none
      */
     public function getAllConstituentNames() {
-        $sql = "SELECT * FROM constituents";
+        $sql = "SELECT * FROM constituents ORDER BY constituents.name ASC";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         $tasks = $stmt->get_result();

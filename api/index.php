@@ -114,12 +114,12 @@ function createAName(){
     $name_id = $db->createAConstituentName($name);
     if ($name_id != NULL) {
         $response["error"] = false;
-        $response["message"] = "Task created successfully";
+        $response["message"] = "Name created successfully";
         $response["name_id"] = $name_id;
         echoResponse(201, $response);
     } else {
         $response["error"] = true;
-        $response["message"] = "Failed to create task. Please try again";
+        $response["message"] = "Failed to create name. Please try again";
         echoResponse(200, $response);
     }
 }

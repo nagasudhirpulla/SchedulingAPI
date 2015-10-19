@@ -134,9 +134,9 @@ $app->put('/names/:id', function($id) use($app) {
     // check for required params
     verifyRequiredParams(array('name','updatename'));
     $response = array();
-    $name = $app->request->put('name');
-    $updatename = $app->request->put('updatename');
-
+    parse_str($app->request()->getBody(), $request_params);
+    $name = $request_params['name'];
+    $updatename = $request_params['updatename'];
     $db = new DbHandler();
 
     // creating new name

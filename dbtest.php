@@ -47,13 +47,11 @@ class DbConnect {
 class DbHandler {
 
     private $conn;
-    private $db;
 
     function __construct() {
         // opening db connection
         $db = new DbConnect();
         $this->conn = $db->connect();
-        $this->db = $db;
         //$this->echoAllConstituentNames();
     }
 
@@ -235,13 +233,19 @@ class DbHandler {
      * Delete a Generator Name
      * @param String $namestr of Generator
      */
-    public function addAGeneratorShareData($genIDs, $conIDs, $percentages) {
-        $sql = "INSERT INTO constshares (p_id, g_id, percentage) VALUES (?,?,?)";
+    public function addAGeneratorShareData(&$genIDs, &$conIDs, &$percentages) {
+        $sql = "INSERT INTO constshares (p_id, g_id, percentage) VALUES ";
+        for ($i = 0; $i < sizeof($genIDs); $i++) {
+            if ($i > 0) $sql .= ", ";
+            $sql .= "(".$conIDs[$i].",".$genIDs[$i].",".$percentages[$i].")";
+        }
         $stmt = $this->conn->prepare($sql);
-        $stmt ->bind_param("iii", 6, 6, 0);
+        //$stmt->bind_param("ss", $genIDs[0], $conIDs[0]);
         $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
         $stmt->close();
-        return 69;
+        return $num_affected_rows;
+        //return $sql;
     }
 
 }

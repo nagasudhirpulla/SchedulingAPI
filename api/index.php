@@ -288,22 +288,22 @@ function deleteAGenerator($name) {
 function addAGeneratorShareData($name){
     $app = \Slim\Slim::getInstance();
     // check for required params
-    verifyRequiredParams(array('genIDs','conIDs','percentages'));
+    //verifyRequiredParams(array('genIDs','conIDs','percentages'));
     $response = array();
     $genIDs = json_decode($app->request()->getBody())->genIDs;
     $conIDs = json_decode($app->request()->getBody())->conIDs;
     $percentages = json_decode($app->request()->getBody())->percentages;
     $db = new DbHandler();
-    // creating new ShareSet
-    $num_rows = $db->addAGeneratorShareData($genIDs, $conIDs, $percentages);
+    // creating new name
+    $num_rows = $db->addAGeneratorShareData($genIDs,$conIDs,$percentages);
     if ($num_rows != NULL) {
         $response["error"] = false;
-        $response["message"] = "Generator created successfully";
+        $response["message"] = "Shares created successfully";
         $response["num_rows"] = $num_rows;
         echoResponse(201, $response);
     } else {
         $response["error"] = true;
-        $response["message"] = "Failed to create generatorShares. Please try again";
+        $response["message"] = "Failed to create shares. Please try again";
         echoResponse(200, $response);
     }
 }

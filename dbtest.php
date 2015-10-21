@@ -230,7 +230,7 @@ class DbHandler {
     }
 
     /**
-     * Delete a Generator Name
+     * Add a Generator Share
      * @param String $namestr of Generator
      */
     public function addAGeneratorShareData(&$genIDs, &$conIDs, &$percentages) {
@@ -240,14 +240,25 @@ class DbHandler {
             $sql .= "(".$conIDs[$i].",".$genIDs[$i].",".$percentages[$i].")";
         }
         $stmt = $this->conn->prepare($sql);
-        //$stmt->bind_param("ss", $genIDs[0], $conIDs[0]);
         $stmt->execute();
         $num_affected_rows = $stmt->affected_rows;
         $stmt->close();
         return $num_affected_rows;
-        //return $sql;
     }
 
+    /**
+     * Get a Generator Share
+     * @param String $namestr of Generator
+     */
+    public function getAGeneratorShareData($genID) {
+        $sql = "SELECT p_id, g_id, percentage, timeblocks FROM constshares WHERE g_id=?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("s", $genID);
+        $stmt->execute();
+        $results = $stmt->get_result();
+        $stmt->close();
+        return $results;
+    }
 }
 
 ?>

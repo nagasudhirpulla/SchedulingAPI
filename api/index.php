@@ -19,6 +19,7 @@ $app->post('/generators','createAGenerator');
 $app->get('/generators/:name','getAGenerator');
 $app->delete('/generators/:name','deleteAGenerator');
 $app->post('/generators/:name','addAGeneratorShareData');
+$app->get('/generatorshares/:genID','getAGeneratorShares');
 
 /**
  * Echoing json response to client
@@ -306,6 +307,31 @@ function addAGeneratorShareData($name){
         $response["message"] = "Failed to create shares. Please try again";
         echoResponse(200, $response);
     }
+}
+
+/**
+ * Get Shares for a particular generator ID
+ * @param String $name nameString of User in database
+ * method GET
+ * url /names/name
+ */
+function getAGeneratorShares($id) {
+    $response = array();
+    $db = new DbHandler();
+    // fetching all users with a particular name
+    $result = $db->getAGeneratorShareData($id);
+    $response["error"] = false;
+    $response["shares"] = array();
+    // looping through result and preparing names array
+    while ($task = $result->fetch_assoc()) {
+        $tmp = array();
+        $tmp["p_id"] = $task["p_id"];
+        $tmp["g_id"] = $task["g_id"];
+        $tmp["percentage"] = $task["percentage"];
+        $tmp["timeblocks"] = $task["timeblocks"];
+        array_push($response["shares"], $tmp);
+    }
+    echoResponse(200, $response);
 }
 /*
 header('Access-Control-Allow-Origin: *');

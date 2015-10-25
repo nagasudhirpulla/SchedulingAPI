@@ -251,13 +251,27 @@ class DbHandler {
      * @param String $namestr of Generator
      */
     public function getAGeneratorShareData($genID) {
-        $sql = "SELECT p_id, g_id, percentage, timeblocks FROM constshares WHERE g_id=?";
+        $sql = "SELECT p_id, percentage, timeblocks FROM constshares WHERE g_id=?";
         $stmt = $this->conn->prepare($sql);
         $stmt->bind_param("s", $genID);
         $stmt->execute();
         $results = $stmt->get_result();
         $stmt->close();
         return $results;
+    }
+
+    /**
+     * Delete a Generator Share
+     * @param String $namestr of Generator
+     */
+    public function deleteAGeneratorShareData($genID) {
+        $sql = "DELETE FROM constshares WHERE g_id=?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("s", $genID);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows;
     }
 }
 

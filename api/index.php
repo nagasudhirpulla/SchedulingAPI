@@ -322,15 +322,22 @@ function getAGeneratorShares($id) {
     $db = new DbHandler();
     // fetching all users with a particular name
     $result = $db->getAGeneratorShareData($id);
-    $response["error"] = false;
-    $response["shares"] = array();
-    // looping through result and preparing names array
-    while ($task = $result->fetch_assoc()) {
-        $tmp = array();
-        $tmp["p_id"] = $task["p_id"];
-        $tmp["percentage"] = $task["percentage"];
-        $tmp["timeblocks"] = $task["timeblocks"];
-        array_push($response["shares"], $tmp);
+    if(gettype($result)=="string") {
+        $response["error"] = true;
+        $response["message"]=$result;
+    }
+    else{
+        $response["error"] = false;
+        $response["shares"] = array();
+        // looping through result and preparing names array
+        while ($task = $result->fetch_assoc()) {
+            $tmp = array();
+            $tmp["p_id"] = $task["p_id"];
+            $tmp["from_b"] = $task["from_b"];
+            $tmp["to_b"] = $task["to_b"];
+            $tmp["percentage"] = $task["percentage"];
+            array_push($response["shares"], $tmp);
+        }
     }
     echoResponse(200, $response);
 }
@@ -358,13 +365,23 @@ function deleteAGeneratorShares($id) {
  * url /names/name
  */
 function updateAGeneratorShares($id) {
+    $app = \Slim\Slim::getInstance();
     $response = array();
     $db = new DbHandler();
-    // fetching all users with a particular name
-    $num_rows = $db->deleteAGeneratorShareData($id);
-    $response["error"] = false;
+    $conIDs = json_decode($app->request()->getBody())->conIDs;
+    $frombs = json_decode($app->request()->getBody())->frombs;
+    $tobs = json_decode($app->request()->getBody())->tobs;
+    $percentages = json_decode($app->request()->getBody())->percentages;
+    $num_rows = $db->updateAGeneratorShareData($id,$conIDs,$frombs,$tobs,$percentages);
+    if(is_numeric($num_rows)) {
+        $response["error"] = false;
+    }
+    else{
+        $response["error"] = true;
+    }
     $response["num_rows"] = $num_rows;
     echoResponse(200, $response);
+
 }
 
 /*

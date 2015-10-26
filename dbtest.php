@@ -251,13 +251,18 @@ class DbHandler {
      * @param String $namestr of Generator
      */
     public function getAGeneratorShareData($genID) {
-        $sql = "SELECT p_id, percentage, timeblocks FROM constshares WHERE g_id=?";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("s", $genID);
-        $stmt->execute();
-        $results = $stmt->get_result();
-        $stmt->close();
-        return $results;
+        try {
+            $sql = "SELECT p_id, from_b, to_b, percentage FROM constshares WHERE g_id=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("s", $genID);
+            $stmt->execute();
+            $results = $stmt->get_result();
+            $stmt->close();
+            return $results;
+        }
+        catch(Exception $e){
+            return $e->getMessage();
+        }
     }
 
     /**
@@ -272,6 +277,38 @@ class DbHandler {
         $num_affected_rows = $stmt->affected_rows;
         $stmt->close();
         return $num_affected_rows;
+    }
+
+    /**
+     * Delete a Generator Share
+     * @param String $namestr of Generator
+     */
+    public function updateAGeneratorShareData($genID,&$conIDs,&$frombs,&$tobs,&$percentages) {
+        try{
+            $this->conn->beginTransaction();
+            //Delete the generator shares
+            $sql = "DELETE FROM constshares WHERE g_id=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("s", $genID);
+            $stmt->execute();
+            $stmt->close();
+            //Save the generator shares
+            $sql = "INSERT INTO constshares (g_id, p_id, from_b, to_b, percentage) VALUES ";
+            for ($i = 0; $i < sizeof($conIDs); $i++) {
+                if ($i > 0) $sql .= ", ";
+                $sql .= "(".$genID.",".$conIDs[$i].",".$frombs[$i].",".$tobs[$i].",".$percentages[$i].")";
+            }
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            $num_affected_rows = $stmt->affected_rows;
+            $stmt->close();
+            //Commit the transaction
+            $this->conn->commit();
+            return $num_affected_rows;
+        }catch (Exception $e){
+            $this->conn->rollBack();
+            return $e->getMessage();
+        }
     }
 }
 

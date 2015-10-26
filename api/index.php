@@ -21,6 +21,7 @@ $app->delete('/generators/:name','deleteAGenerator');
 $app->post('/generators/:name','addAGeneratorShareData');
 $app->get('/generatorshares/:genID','getAGeneratorShares');
 $app->delete('/generatorshares/:genID','deleteAGeneratorShares');
+$app->post('/generatorshares/:genID','updateAGeneratorShares');
 
 /**
  * Echoing json response to client
@@ -341,6 +342,22 @@ function getAGeneratorShares($id) {
  * url /names/name
  */
 function deleteAGeneratorShares($id) {
+    $response = array();
+    $db = new DbHandler();
+    // fetching all users with a particular name
+    $num_rows = $db->deleteAGeneratorShareData($id);
+    $response["error"] = false;
+    $response["num_rows"] = $num_rows;
+    echoResponse(200, $response);
+}
+
+/**
+ * Update Shares for a particular generator ID for saving an update in percentages
+ * @param String $name nameString of User in database
+ * method GET
+ * url /names/name
+ */
+function updateAGeneratorShares($id) {
     $response = array();
     $db = new DbHandler();
     // fetching all users with a particular name

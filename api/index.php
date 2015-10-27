@@ -373,8 +373,10 @@ function updateAGeneratorShares($id) {
     $tobs = json_decode($app->request()->getBody())->tobs;
     $percentages = json_decode($app->request()->getBody())->percentages;
     $num_rows = $db->updateAGeneratorShareData($id,$conIDs,$frombs,$tobs,$percentages);
+    //$num_rows = 90;
     if(is_numeric($num_rows)) {
         $response["error"] = false;
+        $response["num_rows"] = $num_rows;
     }
     else{
         $response["error"] = true;

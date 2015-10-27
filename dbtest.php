@@ -285,13 +285,15 @@ class DbHandler {
      */
     public function updateAGeneratorShareData($genID,&$conIDs,&$frombs,&$tobs,&$percentages) {
         try{
-            $this->conn->beginTransaction();
+            //$this->conn->beginTransaction();
+
             //Delete the generator shares
             $sql = "DELETE FROM constshares WHERE g_id=?";
             $stmt = $this->conn->prepare($sql);
             $stmt->bind_param("s", $genID);
             $stmt->execute();
             $stmt->close();
+
             //Save the generator shares
             $sql = "INSERT INTO constshares (g_id, p_id, from_b, to_b, percentage) VALUES ";
             for ($i = 0; $i < sizeof($conIDs); $i++) {
@@ -302,11 +304,13 @@ class DbHandler {
             $stmt->execute();
             $num_affected_rows = $stmt->affected_rows;
             $stmt->close();
+
             //Commit the transaction
-            $this->conn->commit();
+            //$this->conn->commit();
             return $num_affected_rows;
+            //return 0;
         }catch (Exception $e){
-            $this->conn->rollBack();
+            //$this->conn->rollBack();
             return $e->getMessage();
         }
     }

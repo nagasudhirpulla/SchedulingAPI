@@ -22,6 +22,9 @@ $app->post('/generators/:name','addAGeneratorShareData');
 $app->get('/generatorshares/:genID','getAGeneratorShares');
 $app->delete('/generatorshares/:genID','deleteAGeneratorShares');
 $app->post('/generatorshares/:genID','updateAGeneratorShares');
+$app->get('/revisions/:revID','getARevision');
+$app->post('/revisions/:revID','updateARevision');
+$app->delete('/revisions/:revID','deleteARevision');
 
 /**
  * Echoing json response to client
@@ -373,6 +376,85 @@ function updateAGeneratorShares($id) {
     $tobs = json_decode($app->request()->getBody())->tobs;
     $percentages = json_decode($app->request()->getBody())->percentages;
     $num_rows = $db->updateAGeneratorShareData($id,$conIDs,$frombs,$tobs,$percentages);
+    //$num_rows = 90;
+    if(is_numeric($num_rows)) {
+        $response["error"] = false;
+        $response["num_rows"] = $num_rows;
+    }
+    else{
+        $response["error"] = true;
+    }
+    $response["num_rows"] = $num_rows;
+    echoResponse(200, $response);
+
+}
+
+/**
+ * Get Shares for a particular generator ID
+ * @param String $name nameString of User in database
+ * method GET
+ * url /names/name
+ */
+function getARevision($revId) {
+    $response = array();
+    $db = new DbHandler();
+    // fetching all users with a particular name
+    $result = $db->getARevisionData($revId);
+    if(gettype($result)=="string") {
+        $response["error"] = true;
+        $response["message"]=$result;
+    }
+    else{
+        $response["error"] = false;
+        $response["revData"] = array();
+        // looping through result and preparing names array
+        while ($task = $result->fetch_assoc()) {
+            $tmp = array();
+            $tmp["g_id"] = $task["g_id"];
+            $tmp["p_id"] = $task["p_id"];
+            $tmp["from_b"] = $task["from_b"];
+            $tmp["to_b"] = $task["to_b"];
+            $tmp["cat"] = $task["cat"];
+            $tmp["val"] = $task["val"];
+            array_push($response["revData"], $tmp);
+        }
+    }
+    echoResponse(200, $response);
+}
+
+/**
+ * Delete Shares for a particular generator ID
+ * @param String $name nameString of User in database
+ * method GET
+ * url /names/name
+ */
+function deleteARevision($revId) {
+    $response = array();
+    $db = new DbHandler();
+    // fetching all users with a particular name
+    $num_rows = $db->deleteARevisionData($revId);
+    $response["error"] = false;
+    $response["num_rows"] = $num_rows;
+    echoResponse(200, $response);
+}
+
+/**
+ * Update a Revision
+ * @param String $name nameString of User in database
+ * method POST
+ * url /names/name
+ */
+function updateARevision($revId) {
+    $app = \Slim\Slim::getInstance();
+    $response = array();
+    $db = new DbHandler();
+    $genID = json_decode($app->request()->getBody())->genID;
+    $cats = json_decode($app->request()->getBody())->cats;
+    $conIDs = json_decode($app->request()->getBody())->conIDs;
+    $frombs = json_decode($app->request()->getBody())->frombs;
+    $tobs = json_decode($app->request()->getBody())->tobs;
+    $vals = json_decode($app->request()->getBody())->vals;
+    $num_rows = $db->updateARevisionData($revId,$genID,$cats,$conIDs,$frombs,$tobs,$vals);
     //$num_rows = 90;
     if(is_numeric($num_rows)) {
         $response["error"] = false;

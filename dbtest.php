@@ -280,7 +280,7 @@ class DbHandler {
     }
 
     /**
-     * Delete a Generator Share
+     * update a Generator Share
      * @param String $namestr of Generator
      */
     public function updateAGeneratorShareData($genID,&$conIDs,&$frombs,&$tobs,&$percentages) {
@@ -309,6 +309,76 @@ class DbHandler {
             //$this->conn->commit();
             return $num_affected_rows;
             //return 0;
+        }catch (Exception $e){
+            //$this->conn->rollBack();
+            return $e->getMessage();
+        }
+    }
+
+    /**
+     * Get a Revision Share
+     * @param String $namestr of Generator
+     */
+    public function getARevisionData($revId) {
+        try {
+            $sql = "SELECT g_id, p_id, from_b, to_b, cat, val FROM revisions WHERE id=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("s", $revId);
+            $stmt->execute();
+            $results = $stmt->get_result();
+            $stmt->close();
+            return $results;
+        }
+        catch(Exception $e){
+            return $e->getMessage();
+        }
+    }
+
+    /**
+     * Delete a Revision
+     * @param String $namestr of Generator
+     */
+    public function deleteARevisionData($revId) {
+        $sql = "DELETE FROM revisions WHERE id=?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("s", $revId);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows;
+    }
+
+    /**
+     * Update a Revision
+     * @param String $namestr of Generator
+     */
+    public function updateARevisionData($revId,$genID,&$cats,&$conIDs,&$frombs,&$tobs,&$vals) {
+        try{
+            //$this->conn->beginTransaction();
+
+            //Delete the generator shares
+            $sql = "DELETE FROM revisions WHERE id=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("s", $revId);
+            $stmt->execute();
+            $stmt->close();
+
+            //Save the generator shares
+            $sql = "INSERT INTO revisions (id, g_id, p_id, from_b, to_b, cat, val) VALUES ";
+            for ($i = 0; $i < sizeof($conIDs); $i++) {//sizeof($conIDs)
+                if ($i > 0) $sql .= ", ";
+                $sql .= "(".$revId.",".$genID.",".$conIDs[$i].",".$frombs[$i].",".$tobs[$i].",'".$cats[$i]."','".$vals[$i]."')";
+            }
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            $num_affected_rows = $stmt->affected_rows;
+            $stmt->close();
+
+            //Commit the transaction
+            //$this->conn->commit();
+            return $num_affected_rows;
+            //return 0;
+            //return $sql;
         }catch (Exception $e){
             //$this->conn->rollBack();
             return $e->getMessage();

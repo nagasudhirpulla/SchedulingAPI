@@ -316,6 +316,24 @@ class DbHandler {
     }
 
     /**
+     * Get Revision Count
+     * @param String $namestr of Generator
+     */
+    public function getRevisionCount() {
+        try {
+            $sql = "SELECT MAX(id) AS count FROM revisions";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            $results = $stmt->get_result();
+            $stmt->close();
+            return $results;
+        }
+        catch(Exception $e){
+            return $e->getMessage();
+        }
+    }
+
+    /**
      * Get a Revision Share
      * @param String $namestr of Generator
      */

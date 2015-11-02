@@ -25,6 +25,7 @@ $app->post('/generatorshares/:genID','updateAGeneratorShares');
 $app->get('/revisions/:revID','getARevision');
 $app->post('/revisions/:revID','updateARevision');
 $app->delete('/revisions/:revID','deleteARevision');
+//$app->get('/revisions/count','getRevisionCount');
 
 /**
  * Echoing json response to client
@@ -398,28 +399,42 @@ function updateAGeneratorShares($id) {
 function getARevision($revId) {
     $response = array();
     $db = new DbHandler();
-    // fetching all users with a particular name
-    $result = $db->getARevisionData($revId);
-    if(gettype($result)=="string") {
-        $response["error"] = true;
-        $response["message"]=$result;
+    if($revId == 'count'){
+        $result = $db->getRevisionCount();
+        if(gettype($result)=="string") {
+            $response["error"] = true;
+            $response["message"]=$result;
+        }
+        else{
+            $response["error"] = false;
+            $response["count"] = $result->fetch_assoc()['count'];
+        }
+        echoResponse(200, $response);
     }
     else{
-        $response["error"] = false;
-        $response["revData"] = array();
-        // looping through result and preparing names array
-        while ($task = $result->fetch_assoc()) {
-            $tmp = array();
-            $tmp["g_id"] = $task["g_id"];
-            $tmp["p_id"] = $task["p_id"];
-            $tmp["from_b"] = $task["from_b"];
-            $tmp["to_b"] = $task["to_b"];
-            $tmp["cat"] = $task["cat"];
-            $tmp["val"] = $task["val"];
-            array_push($response["revData"], $tmp);
+        // fetching all users with a particular name
+        $result = $db->getARevisionData($revId);
+        if(gettype($result)=="string") {
+            $response["error"] = true;
+            $response["message"]=$result;
         }
+        else{
+            $response["error"] = false;
+            $response["revData"] = array();
+            // looping through result and preparing names array
+            while ($task = $result->fetch_assoc()) {
+                $tmp = array();
+                $tmp["g_id"] = $task["g_id"];
+                $tmp["p_id"] = $task["p_id"];
+                $tmp["from_b"] = $task["from_b"];
+                $tmp["to_b"] = $task["to_b"];
+                $tmp["cat"] = $task["cat"];
+                $tmp["val"] = $task["val"];
+                array_push($response["revData"], $tmp);
+            }
+        }
+        echoResponse(200, $response);
     }
-    echoResponse(200, $response);
 }
 
 /**

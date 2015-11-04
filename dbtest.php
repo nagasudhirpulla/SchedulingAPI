@@ -353,6 +353,25 @@ class DbHandler {
     }
 
     /**
+     * Get a Revision Share
+     * @param String $namestr of Generator
+     */
+    public function getAGenRevisionData($genID, $revId) {
+        try {
+            $sql = "SELECT p_id, from_b, to_b, cat, val FROM revisions WHERE id=? AND g_id=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("ss", $revId, $genID);
+            $stmt->execute();
+            $results = $stmt->get_result();
+            $stmt->close();
+            return $results;
+        }
+        catch(Exception $e){
+            return $e->getMessage();
+        }
+    }
+
+    /**
      * Delete a Revision
      * @param String $namestr of Generator
      */
@@ -375,9 +394,9 @@ class DbHandler {
             //$this->conn->beginTransaction();
 
             //Delete the generator shares
-            $sql = "DELETE FROM revisions WHERE id=?";
+            $sql = "DELETE FROM revisions WHERE id=? AND g_id=?";
             $stmt = $this->conn->prepare($sql);
-            $stmt->bind_param("s", $revId);
+            $stmt->bind_param("ss", $revId, $genID);
             $stmt->execute();
             $stmt->close();
 

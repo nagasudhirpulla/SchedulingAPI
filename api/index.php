@@ -23,6 +23,7 @@ $app->get('/generatorshares/:genID','getAGeneratorShares');
 $app->delete('/generatorshares/:genID','deleteAGeneratorShares');
 $app->post('/generatorshares/:genID','updateAGeneratorShares');
 $app->get('/revisions/:revID','getARevision');
+$app->get('/revisions/:genID/:revID','getAGenRevision');
 $app->post('/revisions/:revID','updateARevision');
 $app->delete('/revisions/:revID','deleteARevision');
 //$app->get('/revisions/count','getRevisionCount');
@@ -437,6 +438,51 @@ function getARevision($revId) {
     }
 }
 
+/**
+ * Get revision data of a particular generator ID
+ * @param String $name nameString of User in database
+ * method GET
+ * url /names/name
+ */
+function getAGenRevision($genID, $revId) {
+    $response = array();
+    $db = new DbHandler();
+    if($revId == 'count'){
+        $result = $db->getRevisionCount();
+        if(gettype($result)=="string") {
+            $response["error"] = true;
+            $response["message"]=$result;
+        }
+        else{
+            $response["error"] = false;
+            $response["count"] = $result->fetch_assoc()['count'];
+        }
+        echoResponse(200, $response);
+    }
+    else{
+        // fetching all users with a particular name
+        $result = $db->getAGenRevisionData($genID, $revId);
+        if(gettype($result)=="string") {
+            $response["error"] = true;
+            $response["message"]=$result;
+        }
+        else{
+            $response["error"] = false;
+            $response["revData"] = array();
+            // looping through result and preparing names array
+            while ($task = $result->fetch_assoc()) {
+                $tmp = array();
+                $tmp["p_id"] = $task["p_id"];
+                $tmp["from_b"] = $task["from_b"];
+                $tmp["to_b"] = $task["to_b"];
+                $tmp["cat"] = $task["cat"];
+                $tmp["val"] = $task["val"];
+                array_push($response["revData"], $tmp);
+            }
+        }
+        echoResponse(200, $response);
+    }
+}
 /**
  * Delete Shares for a particular generator ID
  * @param String $name nameString of User in database

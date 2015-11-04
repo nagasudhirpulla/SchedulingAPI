@@ -529,6 +529,13 @@ function updateARevision($revId) {
 
 }
 
+function createAGenRev($genID){
+    //Find the latest revision data of the generator to copy from
+    $app = \Slim\Slim::getInstance();
+    $db = new DbHandler();
+    $result = $db->createARevisionData($genID);
+
+}
 /*
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: PUT, GET, POST, DELETE, OPTIONS');

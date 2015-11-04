@@ -358,9 +358,17 @@ class DbHandler {
      */
     public function getAGenRevisionData($genID, $revId) {
         try {
-            $sql = "SELECT p_id, from_b, to_b, cat, val FROM revisions WHERE id=? AND g_id=?";
+            $sql = "SELECT MAX(id) AS prac FROM revisions WHERE id<=? AND g_id=?";
             $stmt = $this->conn->prepare($sql);
             $stmt->bind_param("ss", $revId, $genID);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stmt->close();
+            $practicalID = $result->fetch_assoc()['prac'];
+
+            $sql = "SELECT p_id, from_b, to_b, cat, val FROM revisions WHERE id=? AND g_id=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("ss", $practicalID, $genID);
             $stmt->execute();
             $results = $stmt->get_result();
             $stmt->close();
@@ -392,11 +400,19 @@ class DbHandler {
     public function updateARevisionData($revId,$genID,&$cats,&$conIDs,&$frombs,&$tobs,&$vals) {
         try{
             //$this->conn->beginTransaction();
+            //Get the real revision to delete
+            $sql = "SELECT MAX(id) AS prac FROM revisions WHERE id<=? AND g_id=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("ss", $revId, $genID);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stmt->close();
+            $practicalID = $result->fetch_assoc()['prac'];
 
             //Delete the generator shares
             $sql = "DELETE FROM revisions WHERE id=? AND g_id=?";
             $stmt = $this->conn->prepare($sql);
-            $stmt->bind_param("ss", $revId, $genID);
+            $stmt->bind_param("ss", $practicalID, $genID);
             $stmt->execute();
             $stmt->close();
 
@@ -404,7 +420,62 @@ class DbHandler {
             $sql = "INSERT INTO revisions (id, g_id, p_id, from_b, to_b, cat, val) VALUES ";
             for ($i = 0; $i < sizeof($conIDs); $i++) {//sizeof($conIDs)
                 if ($i > 0) $sql .= ", ";
-                $sql .= "(".$revId.",".$genID.",".$conIDs[$i].",".$frombs[$i].",".$tobs[$i].",'".$cats[$i]."','".$vals[$i]."')";
+                $sql .= "(".$practicalID.",".$genID.",".$conIDs[$i].",".$frombs[$i].",".$tobs[$i].",'".$cats[$i]."','".$vals[$i]."')";
+            }
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            $num_affected_rows = $stmt->affected_rows;
+            $stmt->close();
+
+            //Commit the transaction
+            //$this->conn->commit();
+            return $num_affected_rows;
+            //return 0;
+            //return $sql;
+        }catch (Exception $e){
+            //$this->conn->rollBack();
+            return $e->getMessage();
+        }
+    }
+    /**
+     * Update a Revision
+     * @param String $namestr of Generator
+     */
+    public function createARevisionData($genID) {
+        try{
+            //$this->conn->beginTransaction();
+            //Get the maximum revision number
+            $sql = "SELECT MAX(id) AS tot FROM revisions";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stmt->close();
+            $totRevs = $result->fetch_assoc()['tot'];
+            //Get the latest revision data of the generator
+            $result = $this->getAGenRevisionData($genID, $totRevs);
+            if(gettype($result)=="string") {
+                return $result;
+            }
+            else{
+                $conIDs = array();
+                $frombs = array();
+                $tobs = array();
+                $cats = array();
+                $vals = array();
+                // looping through result and preparing names array
+                while ($task = $result->fetch_assoc()) {
+                    array_push($conIDs,$task["p_id"]);
+                    array_push($frombs,$task["from_b"]);
+                    array_push($tobs,$task["to_b"]);
+                    array_push($cats,$task["cat"]);
+                    array_push($vals,$task["val"]);
+                }
+            }
+            //Save the generator shares
+            $sql = "INSERT INTO revisions (id, g_id, p_id, from_b, to_b, cat, val) VALUES ";
+            for ($i = 0; $i < sizeof($conIDs); $i++) {//sizeof($conIDs)
+                if ($i > 0) $sql .= ", ";
+                $sql .= "(".($totRevs+1).",".$genID.",".$conIDs[$i].",".$frombs[$i].",".$tobs[$i].",'".$cats[$i]."','".$vals[$i]."')";
             }
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();

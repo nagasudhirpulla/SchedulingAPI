@@ -472,7 +472,6 @@ class DbHandler {
                 $tobs = array();
                 $cats = array();
                 $vals = array();
-                // looping through result and preparing names array
                 while ($task = $results->fetch_assoc()) {
                     array_push($conIDs,$task["p_id"]);
                     array_push($frombs,$task["from_b"]);
@@ -492,15 +491,14 @@ class DbHandler {
                 if ($i > 0) $sql .= ", ";
                 $sql .= "(".($totRevs+1).",".$genID.",".$conIDs[$i].",".$frombs[$i].",".$tobs[$i].",'".$cats[$i]."','".$vals[$i]."')";
             }
-            /*$stmt = $this->conn->prepare($sql);
+            $stmt = $this->conn->prepare($sql);
             $stmt->execute();
             $num_affected_rows = $stmt->affected_rows;
-            $stmt->close();*/
-
+            $stmt->close();
             //Commit the transaction
             //$this->conn->commit();
-            //return $totRevs+1;
-            return sizeof($conIDs);
+            return $totRevs+1;
+            //return sizeof($conIDs);
             //return $sql;
         }catch (Exception $e){
             //$this->conn->rollBack();

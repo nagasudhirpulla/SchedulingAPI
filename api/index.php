@@ -25,6 +25,7 @@ $app->post('/generatorshares/:genID','updateAGeneratorShares');
 $app->get('/revisions/:revID','getARevision');
 $app->get('/revisions/:genID/:revID','getAGenRevision');
 $app->post('/revisions/:revID','updateARevision');
+$app->put('/revisions/:genID','createAGenRev');
 $app->delete('/revisions/:revID','deleteARevision');
 //$app->get('/revisions/count','getRevisionCount');
 
@@ -519,7 +520,7 @@ function updateARevision($revId) {
     //$num_rows = 90;
     if(is_numeric($num_rows)) {
         $response["error"] = false;
-        $response["num_rows"] = $num_rows;
+        //$response["num_rows"] = $num_rows;
     }
     else{
         $response["error"] = true;
@@ -531,10 +532,18 @@ function updateARevision($revId) {
 
 function createAGenRev($genID){
     //Find the latest revision data of the generator to copy from
-    $app = \Slim\Slim::getInstance();
+    //$app = \Slim\Slim::getInstance();
     $db = new DbHandler();
-    $result = $db->createARevisionData($genID);
-
+    $newRev = $db->createARevisionData($genID);
+    if(is_numeric($newRev)) {
+        $response["error"] = false;
+        $response["new_rev"] = $newRev;
+    }
+    else{
+        $response["error"] = true;
+    }
+    $response["new_rev"] = $newRev;
+    echoResponse(200, $response);
 }
 /*
 header('Access-Control-Allow-Origin: *');

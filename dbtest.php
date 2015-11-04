@@ -452,18 +452,28 @@ class DbHandler {
             $stmt->close();
             $totRevs = $result->fetch_assoc()['tot'];
             //Get the latest revision data of the generator
-            $result = $this->getAGenRevisionData($genID, $totRevs);
-            if(gettype($result)=="string") {
-                return $result;
-            }
-            else{
+            try {
+                $sql = "SELECT MAX(id) AS prac FROM revisions WHERE id<=? AND g_id=?";
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bind_param("ss", $totRevs, $genID);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $stmt->close();
+                $practicalID = $result->fetch_assoc()['prac'];
+
+                $sql = "SELECT p_id, from_b, to_b, cat, val FROM revisions WHERE id=? AND g_id=?";
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bind_param("ss", $practicalID, $genID);
+                $stmt->execute();
+                $results = $stmt->get_result();
+                $stmt->close();
                 $conIDs = array();
                 $frombs = array();
                 $tobs = array();
                 $cats = array();
                 $vals = array();
                 // looping through result and preparing names array
-                while ($task = $result->fetch_assoc()) {
+                while ($task = $results->fetch_assoc()) {
                     array_push($conIDs,$task["p_id"]);
                     array_push($frombs,$task["from_b"]);
                     array_push($tobs,$task["to_b"]);
@@ -471,21 +481,26 @@ class DbHandler {
                     array_push($vals,$task["val"]);
                 }
             }
+            catch(Exception $e){
+                return $e->getMessage();
+            }
+
+
             //Save the generator shares
             $sql = "INSERT INTO revisions (id, g_id, p_id, from_b, to_b, cat, val) VALUES ";
             for ($i = 0; $i < sizeof($conIDs); $i++) {//sizeof($conIDs)
                 if ($i > 0) $sql .= ", ";
                 $sql .= "(".($totRevs+1).",".$genID.",".$conIDs[$i].",".$frombs[$i].",".$tobs[$i].",'".$cats[$i]."','".$vals[$i]."')";
             }
-            $stmt = $this->conn->prepare($sql);
+            /*$stmt = $this->conn->prepare($sql);
             $stmt->execute();
             $num_affected_rows = $stmt->affected_rows;
-            $stmt->close();
+            $stmt->close();*/
 
             //Commit the transaction
             //$this->conn->commit();
-            return $num_affected_rows;
-            //return 0;
+            //return $totRevs+1;
+            return sizeof($conIDs);
             //return $sql;
         }catch (Exception $e){
             //$this->conn->rollBack();

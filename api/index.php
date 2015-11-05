@@ -24,8 +24,8 @@ $app->delete('/generatorshares/:genID','deleteAGeneratorShares');
 $app->post('/generatorshares/:genID','updateAGeneratorShares');
 $app->get('/revisions/:revID','getARevision');
 $app->get('/revisions/:genID/:revID','getAGenRevision');
-$app->post('/revisions/:revID','updateARevision');
-$app->put('/revisions/:genID','createAGenRev');
+$app->put('/revisions/:revID','updateARevision');
+$app->post('/revisions/:genID','createAGenRev');
 $app->delete('/revisions/:revID','deleteARevision');
 //$app->get('/revisions/count','getRevisionCount');
 
@@ -460,7 +460,19 @@ function getAGenRevision($genID, $revId) {
         }
         echoResponse(200, $response);
     }
-    else{
+    else if($revId == 'latest'){
+        $result = $db->getRevisionCount();
+        if(gettype($result)=="string") {
+            $response["error"] = true;
+            $response["message"]= $result;
+            echoResponse(200, $response);
+        }
+        else{
+            $count = $result->fetch_assoc()['count'];
+            getAGenRevision($genID,$count);
+        }
+    }
+    else if(is_numeric($revId)){
         // fetching all users with a particular name
         $result = $db->getAGenRevisionData($genID, $revId);
         if(gettype($result)=="string") {
@@ -469,6 +481,7 @@ function getAGenRevision($genID, $revId) {
         }
         else{
             $response["error"] = false;
+            $response["revNumber"] = $revId;
             $response["revData"] = array();
             // looping through result and preparing names array
             while ($task = $result->fetch_assoc()) {
@@ -483,6 +496,11 @@ function getAGenRevision($genID, $revId) {
         }
         echoResponse(200, $response);
     }
+    else{
+        $response["error"] = true;
+        $response["message"]="Invalid Revision data request url";
+        echoResponse(200, $response);
+    }
 }
 /**
  * Delete Shares for a particular generator ID
@@ -495,7 +513,12 @@ function deleteARevision($revId) {
     $db = new DbHandler();
     // fetching all users with a particular name
     $num_rows = $db->deleteARevisionData($revId);
-    $response["error"] = false;
+    if(is_numeric($num_rows)) {
+        $response["error"] = false;
+    }
+    else{
+        $response["error"] = true;
+    }
     $response["num_rows"] = $num_rows;
     echoResponse(200, $response);
 }
@@ -520,7 +543,6 @@ function updateARevision($revId) {
     //$num_rows = 90;
     if(is_numeric($num_rows)) {
         $response["error"] = false;
-        //$response["num_rows"] = $num_rows;
     }
     else{
         $response["error"] = true;
@@ -537,7 +559,6 @@ function createAGenRev($genID){
     $newRev = $db->createARevisionData($genID);
     if(is_numeric($newRev)) {
         $response["error"] = false;
-        $response["new_rev"] = $newRev;
     }
     else{
         $response["error"] = true;

@@ -384,13 +384,37 @@ class DbHandler {
      * @param String $namestr of Generator
      */
     public function deleteARevisionData($revId) {
-        $sql = "DELETE FROM revisions WHERE id=?";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("s", $revId);
-        $stmt->execute();
-        $num_affected_rows = $stmt->affected_rows;
-        $stmt->close();
-        return $num_affected_rows;
+        try{
+            //$this->conn->beginTransaction();
+            //Get the maximum revision number
+            $sql = "SELECT MAX(id) AS tot FROM revisions";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stmt->close();
+            $totRevs = $result->fetch_assoc()['tot'];
+
+            if($revId == $totRevs) {
+                $sql = "DELETE FROM revisions WHERE id=?";
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bind_param("s", $revId);
+                $stmt->execute();
+                $num_affected_rows = $stmt->affected_rows;
+                $stmt->close();
+                return $num_affected_rows;
+            }
+            else{
+                //A revision not at at the last is requested to be deleted
+                return "A revision which is not the last one is requested to be deleted which is not allowed";
+            }
+            //Commit the transaction
+            //$this->conn->commit();
+            //return 0;
+            //return $sql;
+        }catch (Exception $e){
+            //$this->conn->rollBack();
+            return $e->getMessage();
+        }
     }
 
     /**
@@ -484,7 +508,6 @@ class DbHandler {
                 return $e->getMessage();
             }
 
-
             //Save the generator shares
             $sql = "INSERT INTO revisions (id, g_id, p_id, from_b, to_b, cat, val) VALUES ";
             for ($i = 0; $i < sizeof($conIDs); $i++) {//sizeof($conIDs)
@@ -493,12 +516,11 @@ class DbHandler {
             }
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();
-            $num_affected_rows = $stmt->affected_rows;
+            //$num_affected_rows = $stmt->affected_rows;
             $stmt->close();
             //Commit the transaction
             //$this->conn->commit();
             return $totRevs+1;
-            //return sizeof($conIDs);
             //return $sql;
         }catch (Exception $e){
             //$this->conn->rollBack();

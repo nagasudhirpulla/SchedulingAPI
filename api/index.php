@@ -22,6 +22,7 @@ $app->post('/generators/:name','addAGeneratorShareData');
 $app->get('/generatorshares/:genID','getAGeneratorShares');
 $app->delete('/generatorshares/:genID','deleteAGeneratorShares');
 $app->post('/generatorshares/:genID','updateAGeneratorShares');
+$app->get('/generatorRevisionNumbers/:genID','getAGenRevisionNumbers');
 $app->get('/revisions/:revID','getARevision');
 $app->get('/revisions/:genID/:revID','getAGenRevision');
 $app->put('/revisions/:revID','updateARevision');
@@ -199,6 +200,26 @@ function deleteAName($name) {
     $response["error"] = false;
     $response["message"] = 'Deleted the name';
     $response["num_rows"] = $num_rows;
+    echoResponse(200, $response);
+}
+
+function getAGenRevisionNumbers($genID){
+    $response = array();
+    $db = new DbHandler();
+    // fetching all users with a particular name
+    $result = $db->getAGenRevisionNumbersData($genID);
+    if(gettype($result)=="string") {
+        $response["error"] = true;
+        $response["message"]=$result;
+    }
+    else{
+        $response["error"] = false;
+        $response["revisionNumbers"] = array();
+        // looping through result and preparing names array
+        while ($task = $result->fetch_assoc()) {
+            array_push($response["revisionNumbers"], $task["id"]);
+        }
+    }
     echoResponse(200, $response);
 }
 

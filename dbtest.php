@@ -353,6 +353,25 @@ class DbHandler {
     }
 
     /**
+     * Get all Revision Numbers relating to a particular generator ID
+     * @param String $namestr of Generator
+     */
+    public function getAGenRevisionNumbersData($genID) {
+        try {
+            $sql = "SELECT DISTINCT id FROM revisions WHERE g_id=? ORDER BY id ASC";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("s", $genID);
+            $stmt->execute();
+            $results = $stmt->get_result();
+            $stmt->close();
+            return $results;
+        }
+        catch(Exception $e){
+            return $e->getMessage();
+        }
+    }
+
+    /**
      * Get a Revision Share
      * @param String $namestr of Generator
      */

@@ -443,6 +443,7 @@ class DbHandler {
     public function updateARevisionData($revId,$genID,&$cats,&$conIDs,&$frombs,&$tobs,&$vals) {
         try{
             //$this->conn->beginTransaction();
+            /*
             //Get the real revision to delete
             $sql = "SELECT MAX(id) AS prac FROM revisions WHERE id<=? AND g_id=?";
             $stmt = $this->conn->prepare($sql);
@@ -451,11 +452,12 @@ class DbHandler {
             $result = $stmt->get_result();
             $stmt->close();
             $practicalID = $result->fetch_assoc()['prac'];
+            */
 
-            //Delete the generator shares
+            //Delete the generator shares of the asked revision
             $sql = "DELETE FROM revisions WHERE id=? AND g_id=?";
             $stmt = $this->conn->prepare($sql);
-            $stmt->bind_param("ss", $practicalID, $genID);
+            $stmt->bind_param("ss", $revId, $genID);
             $stmt->execute();
             $stmt->close();
 
@@ -463,7 +465,7 @@ class DbHandler {
             $sql = "INSERT INTO revisions (id, g_id, p_id, from_b, to_b, cat, val) VALUES ";
             for ($i = 0; $i < sizeof($conIDs); $i++) {//sizeof($conIDs)
                 if ($i > 0) $sql .= ", ";
-                $sql .= "(".$practicalID.",".$genID.",".$conIDs[$i].",".$frombs[$i].",".$tobs[$i].",'".$cats[$i]."','".$vals[$i]."')";
+                $sql .= "(".$revId.",".$genID.",".$conIDs[$i].",".$frombs[$i].",".$tobs[$i].",'".$cats[$i]."','".$vals[$i]."')";
             }
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();
@@ -503,7 +505,9 @@ class DbHandler {
                 $result = $stmt->get_result();
                 $stmt->close();
                 $practicalID = $result->fetch_assoc()['prac'];
-
+                if($practicalID == NULL){
+                    return $totRevs+1;
+                }
                 $sql = "SELECT p_id, from_b, to_b, cat, val FROM revisions WHERE id=? AND g_id=?";
                 $stmt = $this->conn->prepare($sql);
                 $stmt->bind_param("ss", $practicalID, $genID);

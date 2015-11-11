@@ -334,6 +334,43 @@ class DbHandler {
     }
 
     /**
+     * Get Revision Count
+     * @param String $namestr of Generator
+     */
+    public function getDateRevisionCount($date) {
+        try {
+            $sql = "SELECT MAX(id) AS count FROM revisions WHERE date=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("s", $date);
+            $stmt->execute();
+            $results = $stmt->get_result();
+            $stmt->close();
+            return $results;
+        }
+        catch(Exception $e){
+            return $e->getMessage();
+        }
+    }
+
+    /**
+     * Get Revision Count
+     * @param String $namestr of Generator
+     */
+    public function getDateGenRevisionCount($date, $genID) {
+        try {
+            $sql = "SELECT MAX(id) AS count FROM revisions WHERE date=? AND g_id=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("ss", $date, $genID);
+            $stmt->execute();
+            $results = $stmt->get_result();
+            $stmt->close();
+            return $results;
+        }
+        catch(Exception $e){
+            return $e->getMessage();
+        }
+    }
+    /**
      * Get a Revision Share
      * @param String $namestr of Generator
      */
@@ -372,6 +409,24 @@ class DbHandler {
     }
 
     /**
+     * Get all Revision Numbers relating to a particular generator ID
+     * @param String $namestr of Generator
+     */
+    public function getADateGenRevisionNumbersData($date, $genID) {
+        try {
+            $sql = "SELECT DISTINCT id FROM revisions WHERE g_id=? AND date=? ORDER BY id ASC";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("ss", $genID, $date);
+            $stmt->execute();
+            $results = $stmt->get_result();
+            $stmt->close();
+            return $results;
+        }
+        catch(Exception $e){
+            return $e->getMessage();
+        }
+    }
+    /**
      * Get a Revision Share
      * @param String $namestr of Generator
      */
@@ -388,6 +443,33 @@ class DbHandler {
             $sql = "SELECT p_id, from_b, to_b, cat, val FROM revisions WHERE id=? AND g_id=?";
             $stmt = $this->conn->prepare($sql);
             $stmt->bind_param("ss", $practicalID, $genID);
+            $stmt->execute();
+            $results = $stmt->get_result();
+            $stmt->close();
+            return $results;
+        }
+        catch(Exception $e){
+            return $e->getMessage();
+        }
+    }
+
+    /**
+     * Get a Revision Share
+     * @param String $namestr of Generator
+     */
+    public function getADateGenRevisionData($date, $genID, $revId) {
+        try {
+            $sql = "SELECT MAX(id) AS prac FROM revisions WHERE id<=? AND g_id=? AND date=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("sss", $revId, $genID, $date);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stmt->close();
+            $practicalID = $result->fetch_assoc()['prac'];
+
+            $sql = "SELECT p_id, from_b, to_b, cat, val FROM revisions WHERE id=? AND g_id=? AND date=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("sss", $practicalID, $genID, $date);
             $stmt->execute();
             $results = $stmt->get_result();
             $stmt->close();
@@ -437,6 +519,46 @@ class DbHandler {
     }
 
     /**
+     * Delete a Revision
+     * @param String $namestr of Generator
+     */
+    public function deleteADateRevisionData($date, $revId) {
+        try{
+            //$this->conn->beginTransaction();
+            //Get the maximum revision number
+            $sql = "SELECT MAX(id) AS tot FROM revisions WHERE date=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("s", $date);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stmt->close();
+            $totRevs = $result->fetch_assoc()['tot'];
+
+            if($revId == $totRevs) {
+                $sql = "DELETE FROM revisions WHERE id=? AND date=?";
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bind_param("ss", $revId, $date);
+                $stmt->execute();
+                $num_affected_rows = $stmt->affected_rows;
+                $stmt->close();
+                return $num_affected_rows;
+            }
+            else{
+                //A revision not at at the last is requested to be deleted
+                return "A revision which is not the last one is requested to be deleted which is not allowed";
+            }
+            //Commit the transaction
+            //$this->conn->commit();
+            //return 0;
+            //return $sql;
+        }catch (Exception $e){
+            //$this->conn->rollBack();
+            return $e->getMessage();
+        }
+    }
+
+
+    /**
      * Update a Revision
      * @param String $namestr of Generator
      */
@@ -482,6 +604,54 @@ class DbHandler {
             return $e->getMessage();
         }
     }
+
+    /**
+     * Update a Revision
+     * @param String $namestr of Generator
+     */
+    public function updateADateRevisionData($date,$revId,$genID,&$cats,&$conIDs,&$frombs,&$tobs,&$vals) {
+        try{
+            //$this->conn->beginTransaction();
+            /*
+            //Get the real revision to delete
+            $sql = "SELECT MAX(id) AS prac FROM revisions WHERE id<=? AND g_id=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("ss", $revId, $genID);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stmt->close();
+            $practicalID = $result->fetch_assoc()['prac'];
+            */
+
+            //Delete the generator shares of the asked revision
+            $sql = "DELETE FROM revisions WHERE id=? AND g_id=? AND date=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("sss", $revId, $genID, $date);
+            $stmt->execute();
+            $stmt->close();
+
+            //Save the generator shares
+            $sql = "INSERT INTO revisions (date, id, g_id, p_id, from_b, to_b, cat, val) VALUES ";
+            for ($i = 0; $i < sizeof($conIDs); $i++) {//sizeof($conIDs)
+                if ($i > 0) $sql .= ", ";
+                $sql .= "('".$date."',".$revId.",".$genID.",".$conIDs[$i].",".$frombs[$i].",".$tobs[$i].",'".$cats[$i]."','".$vals[$i]."')";
+            }
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            $num_affected_rows = $stmt->affected_rows;
+            $stmt->close();
+
+            //Commit the transaction
+            //$this->conn->commit();
+            return $num_affected_rows;
+            //return 0;
+            //return $sql;
+        }catch (Exception $e){
+            //$this->conn->rollBack();
+            return $e->getMessage();
+        }
+    }
+
     /**
      * Update a Revision
      * @param String $namestr of Generator
@@ -536,6 +706,79 @@ class DbHandler {
             for ($i = 0; $i < sizeof($conIDs); $i++) {//sizeof($conIDs)
                 if ($i > 0) $sql .= ", ";
                 $sql .= "(".($totRevs+1).",".$genID.",".$conIDs[$i].",".$frombs[$i].",".$tobs[$i].",'".$cats[$i]."','".$vals[$i]."')";
+            }
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            //$num_affected_rows = $stmt->affected_rows;
+            $stmt->close();
+            //Commit the transaction
+            //$this->conn->commit();
+            return $totRevs+1;
+            //return $sql;
+        }catch (Exception $e){
+            //$this->conn->rollBack();
+            return $e->getMessage();
+        }
+    }
+
+    /**
+     * Update a Revision
+     * @param String $namestr of Generator
+     */
+    public function createADateRevisionData($date, $genID) {
+        try{
+            //$this->conn->beginTransaction();
+            //Get the maximum revision number
+            $sql = "SELECT MAX(id) AS tot FROM revisions WHERE date=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("s", $date);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stmt->close();
+            $totRevs = $result->fetch_assoc()['tot'];
+            if($totRevs == NULL){
+                return 0;
+            }
+            //Get the latest revision data of the generator
+            try {
+                $sql = "SELECT MAX(id) AS prac FROM revisions WHERE id<=? AND g_id=? AND date=?";
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bind_param("sss", $totRevs, $genID, $date);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $stmt->close();
+                $practicalID = $result->fetch_assoc()['prac'];
+                if($practicalID == NULL){
+                    return $totRevs+1;
+                }
+                $sql = "SELECT p_id, from_b, to_b, cat, val FROM revisions WHERE id=? AND g_id=? AND date=?";
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bind_param("sss", $practicalID, $genID, $date);
+                $stmt->execute();
+                $results = $stmt->get_result();
+                $stmt->close();
+                $conIDs = array();
+                $frombs = array();
+                $tobs = array();
+                $cats = array();
+                $vals = array();
+                while ($task = $results->fetch_assoc()) {
+                    array_push($conIDs,$task["p_id"]);
+                    array_push($frombs,$task["from_b"]);
+                    array_push($tobs,$task["to_b"]);
+                    array_push($cats,$task["cat"]);
+                    array_push($vals,$task["val"]);
+                }
+            }
+            catch(Exception $e){
+                return $e->getMessage();
+            }
+
+            //Save the generator shares
+            $sql = "INSERT INTO revisions (date, id, g_id, p_id, from_b, to_b, cat, val) VALUES ";
+            for ($i = 0; $i < sizeof($conIDs); $i++) {//sizeof($conIDs)
+                if ($i > 0) $sql .= ", ";
+                $sql .= "('".$date."',".($totRevs+1).",".$genID.",".$conIDs[$i].",".$frombs[$i].",".$tobs[$i].",'".$cats[$i]."','".$vals[$i]."')";
             }
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();

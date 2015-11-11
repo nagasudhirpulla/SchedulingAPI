@@ -23,11 +23,16 @@ $app->get('/generatorshares/:genID','getAGeneratorShares');
 $app->delete('/generatorshares/:genID','deleteAGeneratorShares');
 $app->post('/generatorshares/:genID','updateAGeneratorShares');
 $app->get('/generatorRevisionNumbers/:genID','getAGenRevisionNumbers');
+$app->get('/generatorRevisionNumbers/:date/:genID','getADateGenRevisionNumbers');
 $app->get('/revisions/:revID','getARevision');
 $app->get('/revisions/:genID/:revID','getAGenRevision');
+$app->get('/revisions/:date/:genID/:revID','getADateGenRevision');
 $app->put('/revisions/:revID','updateARevision');
+$app->put('/revisions/:date/:revID','updateADateRevision');
 $app->post('/revisions/:genID','createAGenRev');
+$app->post('/revisions/:date/:genID','createADateGenRev');
 $app->delete('/revisions/:revID','deleteARevision');
+$app->delete('/revisions/:date/:revID','deleteADateRevision');
 //$app->get('/revisions/count','getRevisionCount');
 
 /**
@@ -208,6 +213,26 @@ function getAGenRevisionNumbers($genID){
     $db = new DbHandler();
     // fetching all users with a particular name
     $result = $db->getAGenRevisionNumbersData($genID);
+    if(gettype($result)=="string") {
+        $response["error"] = true;
+        $response["message"]=$result;
+    }
+    else{
+        $response["error"] = false;
+        $response["revisionNumbers"] = array();
+        // looping through result and preparing names array
+        while ($task = $result->fetch_assoc()) {
+            array_push($response["revisionNumbers"], $task["id"]);
+        }
+    }
+    echoResponse(200, $response);
+}
+
+function getADateGenRevisionNumbers($date, $genID){
+    $response = array();
+    $db = new DbHandler();
+    // fetching all users with a particular name
+    $result = $db->getADateGenRevisionNumbersData($date, $genID);
     if(gettype($result)=="string") {
         $response["error"] = true;
         $response["message"]=$result;
@@ -422,7 +447,7 @@ function updateAGeneratorShares($id) {
 function getARevision($revId) {
     $response = array();
     $db = new DbHandler();
-    if($revId == 'count'){
+    if($revId == 'count'&& !is_numeric($revId)){
         $result = $db->getRevisionCount();
         if(gettype($result)=="string") {
             $response["error"] = true;
@@ -469,8 +494,9 @@ function getARevision($revId) {
 function getAGenRevision($genID, $revId) {
     $response = array();
     $db = new DbHandler();
-    if($revId == 'count'){
-        $result = $db->getRevisionCount();
+    if($revId == 'count'&& !is_numeric($revId)){
+        //here the date is genID string
+        $result = $db->getDateRevisionCount($genID);
         if(gettype($result)=="string") {
             $response["error"] = true;
             $response["message"]=$result;
@@ -481,7 +507,7 @@ function getAGenRevision($genID, $revId) {
         }
         echoResponse(200, $response);
     }
-    else if($revId == 'latest'){
+    else if($revId == 'latest'&& !is_numeric($revId)){
         $result = $db->getRevisionCount();
         if(gettype($result)=="string") {
             $response["error"] = true;
@@ -523,6 +549,72 @@ function getAGenRevision($genID, $revId) {
         echoResponse(200, $response);
     }
 }
+
+/**
+ * Get revision data of a particular generator ID
+ * @param String $name nameString of User in database
+ * method GET
+ * url /names/name
+ */
+function getADateGenRevision($date, $genID, $revId) {
+    $response = array();
+    $db = new DbHandler();
+    if($revId == 'count' && !is_numeric($revId)){
+        $result = $db->getDateGenRevisionCount($date, $genID);
+        if(gettype($result)=="string") {
+            $response["error"] = true;
+            $response["message"]=$result;
+        }
+        else{
+            $response["error"] = false;
+            $response["count"] = $result->fetch_assoc()['count'];
+        }
+        echoResponse(200, $response);
+    }
+    else if($revId == 'latest' && !is_numeric($revId)){
+        $result = $db->getDateRevisionCount($date);
+        if(gettype($result)=="string") {
+            $response["error"] = true;
+            $response["message"]= $result;
+            echoResponse(200, $response);
+        }
+        else{
+            $count = $result->fetch_assoc()['count'];
+            getADateGenRevision($date, $genID, $count);
+        }
+    }
+    else if(is_numeric($revId)||$revId==null){
+        // fetching all users with a particular name
+        $result = $db->getADateGenRevisionData($date, $genID, $revId);
+        if(gettype($result)=="string") {
+            $response["error"] = true;
+            $response["message"]=$result;
+        }
+        else{
+            $response["error"] = false;
+            $response["revNumber"] = $revId;
+            $response["date"] = $date;
+            $response["revData"] = array();
+            // looping through result and preparing names array
+            while ($task = $result->fetch_assoc()) {
+                $tmp = array();
+                $tmp["p_id"] = $task["p_id"];
+                $tmp["from_b"] = $task["from_b"];
+                $tmp["to_b"] = $task["to_b"];
+                $tmp["cat"] = $task["cat"];
+                $tmp["val"] = $task["val"];
+                array_push($response["revData"], $tmp);
+            }
+        }
+        echoResponse(200, $response);
+    }
+    else{
+        $response["error"] = true;
+        $response["message"]="Invalid Revision data request url";
+        echoResponse(200, $response);
+    }
+}
+
 /**
  * Delete Shares for a particular generator ID
  * @param String $name nameString of User in database
@@ -534,6 +626,27 @@ function deleteARevision($revId) {
     $db = new DbHandler();
     // fetching all users with a particular name
     $num_rows = $db->deleteARevisionData($revId);
+    if(is_numeric($num_rows)) {
+        $response["error"] = false;
+    }
+    else{
+        $response["error"] = true;
+    }
+    $response["num_rows"] = $num_rows;
+    echoResponse(200, $response);
+}
+
+/**
+ * Delete Shares for a particular generator ID
+ * @param String $name nameString of User in database
+ * method GET
+ * url /names/name
+ */
+function deleteADateRevision($date, $revId) {
+    $response = array();
+    $db = new DbHandler();
+    // fetching all users with a particular name
+    $num_rows = $db->deleteADateRevisionData($date, $revId);
     if(is_numeric($num_rows)) {
         $response["error"] = false;
     }
@@ -573,11 +686,53 @@ function updateARevision($revId) {
 
 }
 
+/**
+ * Update a Revision
+ * @param String $name nameString of User in database
+ * method POST
+ * url /names/name
+ */
+function updateADateRevision($date,$revId) {
+    $app = \Slim\Slim::getInstance();
+    $response = array();
+    $db = new DbHandler();
+    $genID = json_decode($app->request()->getBody())->genID;
+    $cats = json_decode($app->request()->getBody())->cats;
+    $conIDs = json_decode($app->request()->getBody())->conIDs;
+    $frombs = json_decode($app->request()->getBody())->frombs;
+    $tobs = json_decode($app->request()->getBody())->tobs;
+    $vals = json_decode($app->request()->getBody())->vals;
+    $num_rows = $db->updateADateRevisionData($date, $revId,$genID,$cats,$conIDs,$frombs,$tobs,$vals);
+    //$num_rows = 90;
+    if(is_numeric($num_rows)) {
+        $response["error"] = false;
+    }
+    else{
+        $response["error"] = true;
+    }
+    $response["num_rows"] = $num_rows;
+    echoResponse(200, $response);
+}
+
 function createAGenRev($genID){
     //Find the latest revision data of the generator to copy from
     //$app = \Slim\Slim::getInstance();
     $db = new DbHandler();
     $newRev = $db->createARevisionData($genID);
+    if(is_numeric($newRev)) {
+        $response["error"] = false;
+    }
+    else{
+        $response["error"] = true;
+    }
+    $response["new_rev"] = $newRev;
+    echoResponse(200, $response);
+}
+function createADateGenRev($date, $genID){
+    //Find the latest revision data of the generator to copy from
+    //$app = \Slim\Slim::getInstance();
+    $db = new DbHandler();
+    $newRev = $db->createADateRevisionData($date, $genID);
     if(is_numeric($newRev)) {
         $response["error"] = false;
     }

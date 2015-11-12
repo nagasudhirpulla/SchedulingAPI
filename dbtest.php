@@ -480,6 +480,20 @@ class DbHandler {
         }
     }
 
+    public  function getADateGenRevisionParams($date, $revId){
+        try {
+            $sql = "SELECT comment, time FROM revisionglobal WHERE id=? AND date=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("ss", $revId, $date);
+            $stmt->execute();
+            $results = $stmt->get_result();
+            $stmt->close();
+            return $results;
+        }
+        catch(Exception $e){
+            return $e->getMessage();
+        }
+    }
     /**
      * Delete a Revision
      * @param String $namestr of Generator
@@ -525,6 +539,7 @@ class DbHandler {
     public function deleteADateRevisionData($date, $revId) {
         try{
             //$this->conn->beginTransaction();
+            //TODO delete from revisionglobal table also
             //Get the maximum revision number
             $sql = "SELECT MAX(id) AS tot FROM revisions WHERE date=?";
             $stmt = $this->conn->prepare($sql);
@@ -609,7 +624,7 @@ class DbHandler {
      * Update a Revision
      * @param String $namestr of Generator
      */
-    public function updateADateRevisionData($date,$revId,$genID,&$cats,&$conIDs,&$frombs,&$tobs,&$vals) {
+    public function updateADateRevisionData($date,$revId,$genID,&$cats,&$conIDs,&$frombs,&$tobs,&$vals, $TO, $comm) {
         try{
             //$this->conn->beginTransaction();
             /*
@@ -623,6 +638,8 @@ class DbHandler {
             $practicalID = $result->fetch_assoc()['prac'];
             */
 
+            //Update the revision parameters
+            $this->updateRevisionParams($date,$revId,$TO,$comm);
             //Delete the generator shares of the asked revision
             $sql = "DELETE FROM revisions WHERE id=? AND g_id=? AND date=?";
             $stmt = $this->conn->prepare($sql);
@@ -725,18 +742,18 @@ class DbHandler {
      * Update a Revision
      * @param String $namestr of Generator
      */
-    public function createADateRevisionData($date, $genID) {
+    public function createADateRevisionData($date, $genID, $TO, $comm) {
         try{
             //$this->conn->beginTransaction();
             //Get the maximum revision number
-            $sql = "SELECT MAX(id) AS tot FROM revisions WHERE date=?";
+            $sql = "SELECT MAX(id) AS tot FROM revisions WHERE date='".$date."'";
             $stmt = $this->conn->prepare($sql);
-            $stmt->bind_param("s", $date);
             $stmt->execute();
             $result = $stmt->get_result();
             $stmt->close();
             $totRevs = $result->fetch_assoc()['tot'];
-            if($totRevs == NULL){
+            if($totRevs == NULL && !is_numeric($totRevs)){
+                $this->updateRevisionParams($date, 0, $TO, $comm);
                 return 0;
             }
             //Get the latest revision data of the generator
@@ -748,7 +765,8 @@ class DbHandler {
                 $result = $stmt->get_result();
                 $stmt->close();
                 $practicalID = $result->fetch_assoc()['prac'];
-                if($practicalID == NULL){
+                if($practicalID == NULL && !is_numeric($practicalID)){
+                    $this->updateRevisionParams($date, $totRevs+1, $TO, $comm);
                     return $totRevs+1;
                 }
                 $sql = "SELECT p_id, from_b, to_b, cat, val FROM revisions WHERE id=? AND g_id=? AND date=?";
@@ -786,10 +804,27 @@ class DbHandler {
             $stmt->close();
             //Commit the transaction
             //$this->conn->commit();
+            $this->updateRevisionParams($date, $totRevs+1, $TO, $comm);
             return $totRevs+1;
             //return $sql;
         }catch (Exception $e){
             //$this->conn->rollBack();
+            return $e->getMessage();
+        }
+    }
+
+    function updateRevisionParams($date, $revID, $TO, $comm){
+        //INSERT INTO `wrldc_schedule`.`revisionglobal` (`id`, `date`, `time`, `comment`, `metadata`) VALUES ('2', '2015-11-12', '12:47:00', 'sudhir', NULL) ON DUPLICATE KEY UPDATE `comment` = VALUES(`comment`), `time` = VALUES(`time`), `metadata` = VALUES(`metadata`)
+        try {
+            $sql = "INSERT INTO revisionglobal (id, date, time, comment, metadata) VALUES (?, '".$date."','".$TO."' , ?, NULL ) ON DUPLICATE KEY UPDATE comment = VALUES(comment), time = VALUES(time), metadata = VALUES(metadata)";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("ss", $revID, $comm);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stmt->close();
+        }
+        catch(Exception $e){
+            //TODO error handling
             return $e->getMessage();
         }
     }

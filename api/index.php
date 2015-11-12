@@ -586,9 +586,14 @@ function getADateGenRevision($date, $genID, $revId) {
     else if(is_numeric($revId)||$revId==null){
         // fetching all users with a particular name
         $result = $db->getADateGenRevisionData($date, $genID, $revId);
+        $result1 = $db->getADateGenRevisionParams($date, $revId);
         if(gettype($result)=="string") {
             $response["error"] = true;
             $response["message"]=$result;
+        }
+        else if(gettype($result1)=="string"){
+            $response["error"] = true;
+            $response["message"]=$result1;
         }
         else{
             $response["error"] = false;
@@ -604,6 +609,11 @@ function getADateGenRevision($date, $genID, $revId) {
                 $tmp["cat"] = $task["cat"];
                 $tmp["val"] = $task["val"];
                 array_push($response["revData"], $tmp);
+            }
+            // looping through result and preparing names array
+            while ($task = $result1->fetch_assoc()) {
+                $response["comment"] = $task["comment"];
+                $response["TO"] = $task["time"];
             }
         }
         echoResponse(200, $response);
@@ -702,7 +712,9 @@ function updateADateRevision($date,$revId) {
     $frombs = json_decode($app->request()->getBody())->frombs;
     $tobs = json_decode($app->request()->getBody())->tobs;
     $vals = json_decode($app->request()->getBody())->vals;
-    $num_rows = $db->updateADateRevisionData($date, $revId,$genID,$cats,$conIDs,$frombs,$tobs,$vals);
+    $TO = json_decode($app->request()->getBody())->TO;
+    $comm = json_decode($app->request()->getBody())->comm;
+    $num_rows = $db->updateADateRevisionData($date, $revId,$genID,$cats,$conIDs,$frombs,$tobs,$vals,$TO, $comm);
     //$num_rows = 90;
     if(is_numeric($num_rows)) {
         $response["error"] = false;
@@ -730,9 +742,11 @@ function createAGenRev($genID){
 }
 function createADateGenRev($date, $genID){
     //Find the latest revision data of the generator to copy from
-    //$app = \Slim\Slim::getInstance();
+    $app = \Slim\Slim::getInstance();
+    $TO = json_decode($app->request()->getBody())->TO;
+    $comm = json_decode($app->request()->getBody())->comm;
     $db = new DbHandler();
-    $newRev = $db->createADateRevisionData($date, $genID);
+    $newRev = $db->createADateRevisionData($date, $genID, $TO, $comm);
     if(is_numeric($newRev)) {
         $response["error"] = false;
     }

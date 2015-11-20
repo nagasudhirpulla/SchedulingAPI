@@ -828,6 +828,171 @@ class DbHandler {
             return $e->getMessage();
         }
     }
+
+    public function updateAnImplementedDateRevisionData($date,$revId,$genID,&$cats,&$conIDs,&$frombs,&$tobs,&$vals, $TO, $comm) {
+        try{
+            //$this->conn->beginTransaction();
+            /*
+            //Get the real revision to delete
+            $sql = "SELECT MAX(id) AS prac FROM revisions WHERE id<=? AND g_id=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("ss", $revId, $genID);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stmt->close();
+            $practicalID = $result->fetch_assoc()['prac'];
+            */
+
+            //Update the revision parameters
+            //$this->updateRevisionParams($date,$revId,$TO,$comm);
+            //Delete the generator shares of the asked revision
+            $sql = "DELETE FROM revisionsimplemented WHERE id=? AND g_id=? AND date=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("sss", $revId, $genID, $date);
+            $stmt->execute();
+            $stmt->close();
+
+            //Save the generator shares
+            $sql = "INSERT INTO revisionsimplemented (date, id, g_id, p_id, from_b, to_b, cat, val) VALUES ";
+            for ($i = 0; $i < sizeof($conIDs); $i++) {//sizeof($conIDs)
+                if ($i > 0) $sql .= ", ";
+                $sql .= "('".$date."',".$revId.",".$genID.",".$conIDs[$i].",".$frombs[$i].",".$tobs[$i].",'".$cats[$i]."','".$vals[$i]."')";
+            }
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            $num_affected_rows = $stmt->affected_rows;
+            $stmt->close();
+
+            //Commit the transaction
+            //$this->conn->commit();
+            return $num_affected_rows;
+            //return 0;
+            //return $sql;
+        }catch (Exception $e){
+            //$this->conn->rollBack();
+            return $e->getMessage();
+        }
+    }
+
+    /**
+     * Delete a Revision
+     * @param String $namestr of Generator
+     */
+    public function deleteAnImplementedDateRevisionData($date, $revId) {
+        try{
+            //$this->conn->beginTransaction();
+            //TODO delete from revisionglobal table also
+            //Get the maximum revision number
+            $sql = "SELECT MAX(id) AS tot FROM revisionsimplemented WHERE date=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("s", $date);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stmt->close();
+            $totRevs = $result->fetch_assoc()['tot'];
+
+            if($revId == $totRevs) {
+                $sql = "DELETE FROM revisionsimplemented WHERE id=? AND date=?";
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bind_param("ss", $revId, $date);
+                $stmt->execute();
+                $num_affected_rows = $stmt->affected_rows;
+                $stmt->close();
+                return $num_affected_rows;
+            }
+            else{
+                //A revision not at at the last is requested to be deleted
+                return "A revision which is not the last one is requested to be deleted which is not allowed";
+            }
+            //Commit the transaction
+            //$this->conn->commit();
+            //return 0;
+            //return $sql;
+        }catch (Exception $e){
+            //$this->conn->rollBack();
+            return $e->getMessage();
+        }
+    }
+
+    /**
+     * Get Revision Count
+     * @param String $namestr of Generator
+     */
+    public function getImplementedDateGenRevisionCount($date, $genID) {
+        try {
+            $sql = "SELECT MAX(id) AS count FROM revisionsimplemented WHERE date=? AND g_id=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("ss", $date, $genID);
+            $stmt->execute();
+            $results = $stmt->get_result();
+            $stmt->close();
+            return $results;
+        }
+        catch(Exception $e){
+            return $e->getMessage();
+        }
+    }
+
+    /**
+     * Get Revision Count
+     * @param String $namestr of Generator
+     */
+    public function getImplementedDateRevisionCount($date) {
+        try {
+            $sql = "SELECT MAX(id) AS count FROM revisionsimplemented WHERE date=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("s", $date);
+            $stmt->execute();
+            $results = $stmt->get_result();
+            $stmt->close();
+            return $results;
+        }
+        catch(Exception $e){
+            return $e->getMessage();
+        }
+    }
+
+    /**
+     * Get a Revision Share
+     * @param String $namestr of Generator
+     */
+    public function getAnImplementedDateGenRevisionData($date, $genID, $revId) {
+        try {
+            $sql = "SELECT MAX(id) AS prac FROM revisionsimplemented WHERE id<=? AND g_id=? AND date=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("sss", $revId, $genID, $date);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stmt->close();
+            $practicalID = $result->fetch_assoc()['prac'];
+
+            $sql = "SELECT p_id, from_b, to_b, cat, val FROM revisionsimplemented WHERE id=? AND g_id=? AND date=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("sss", $practicalID, $genID, $date);
+            $stmt->execute();
+            $results = $stmt->get_result();
+            $stmt->close();
+            return $results;
+        }
+        catch(Exception $e){
+            return $e->getMessage();
+        }
+    }
+
+    public  function getAnImplementedDateGenRevisionParams($date, $revId){
+        try {
+            $sql = "SELECT comment, time FROM revisionglobal WHERE id=? AND date=?";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("ss", $revId, $date);
+            $stmt->execute();
+            $results = $stmt->get_result();
+            $stmt->close();
+            return $results;
+        }
+        catch(Exception $e){
+            return $e->getMessage();
+        }
+    }
 }
 
 ?>

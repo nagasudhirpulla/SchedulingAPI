@@ -34,6 +34,9 @@ $app->post('/revisions/:date/:genID','createADateGenRev');
 $app->delete('/revisions/:revID','deleteARevision');
 $app->delete('/revisions/:date/:revID','deleteADateRevision');
 //$app->get('/revisions/count','getRevisionCount');
+$app->put('/revisionsimplemented/:date/:revID','updateAnImplementedDateRevision');
+$app->delete('/revisionsimplemented/:date/:revID','deleteAnImplementedDateRevision');
+$app->get('/revisionsimplemented/:date/:genID/:revID','getAnImplementedDateGenRevision');
 
 /**
  * Echoing json response to client
@@ -756,6 +759,129 @@ function createADateGenRev($date, $genID){
     $response["new_rev"] = $newRev;
     echoResponse(200, $response);
 }
+
+function updateAnImplementedDateRevision($date,$revId) {
+    $app = \Slim\Slim::getInstance();
+    $response = array();
+    $db = new DbHandler();
+    $genID = json_decode($app->request()->getBody())->genID;
+    $cats = json_decode($app->request()->getBody())->cats;
+    $conIDs = json_decode($app->request()->getBody())->conIDs;
+    $frombs = json_decode($app->request()->getBody())->frombs;
+    $tobs = json_decode($app->request()->getBody())->tobs;
+    $vals = json_decode($app->request()->getBody())->vals;
+    $TO = json_decode($app->request()->getBody())->TO;
+    $comm = json_decode($app->request()->getBody())->comm;
+    $num_rows = $db->updateAnImplementedDateRevisionData($date, $revId,$genID,$cats,$conIDs,$frombs,$tobs,$vals,$TO, $comm);
+    //$num_rows = 90;
+    if(is_numeric($num_rows)) {
+        $response["error"] = false;
+    }
+    else{
+        $response["error"] = true;
+    }
+    $response["num_rows"] = $num_rows;
+    echoResponse(200, $response);
+}
+
+/**
+ * Delete Shares for a particular generator ID
+ * @param String $name nameString of User in database
+ * method GET
+ * url /names/name
+ */
+function deleteAnImplementedDateRevision($date, $revId) {
+    $response = array();
+    $db = new DbHandler();
+    // fetching all users with a particular name
+    $num_rows = $db->deleteAnImplementedDateRevisionData($date, $revId);
+    if(is_numeric($num_rows)) {
+        $response["error"] = false;
+    }
+    else{
+        $response["error"] = true;
+    }
+    $response["num_rows"] = $num_rows;
+    echoResponse(200, $response);
+}
+
+/**
+ * Get revision data of a particular generator ID
+ * @param String $name nameString of User in database
+ * method GET
+ * url /names/name
+ */
+function getAnImplementedDateGenRevision($date, $genID, $revId) {
+    $response = array();
+    $db = new DbHandler();
+    if($revId == 'count' && !is_numeric($revId)){
+        $result = $db->getImplementedDateGenRevisionCount($date, $genID);
+        if(gettype($result)=="string") {
+            $response["error"] = true;
+            $response["message"]=$result;
+        }
+        else{
+            $response["error"] = false;
+            $response["count"] = $result->fetch_assoc()['count'];
+        }
+        echoResponse(200, $response);
+    }
+    else if($revId == 'latest' && !is_numeric($revId)){
+        $result = $db->getImplementedDateRevisionCount($date);
+        if(gettype($result)=="string") {
+            $response["error"] = true;
+            $response["message"]= $result;
+            echoResponse(200, $response);
+        }
+        else{
+            $count = $result->fetch_assoc()['count'];
+            getAnImplementedDateGenRevision($date, $genID, $count);
+        }
+    }
+    else if(is_numeric($revId)||$revId==null){
+        // fetching all users with a particular name
+        $result = $db->getAnImplementedDateGenRevisionData($date, $genID, $revId);
+        //$result1 = $db->getAnImplementedDateGenRevisionParams($date, $revId);
+        if(gettype($result)=="string") {
+            $response["error"] = true;
+            $response["message"]=$result;
+        }
+        /*else if(gettype($result1)=="string"){
+            $response["error"] = true;
+            $response["message"]=$result1;
+        }*/
+        else{
+            $response["error"] = false;
+            $response["revNumber"] = $revId;
+            $response["date"] = $date;
+            $response["revData"] = array();
+            // looping through result and preparing names array
+            while ($task = $result->fetch_assoc()) {
+                $tmp = array();
+                $tmp["p_id"] = $task["p_id"];
+                $tmp["from_b"] = $task["from_b"];
+                $tmp["to_b"] = $task["to_b"];
+                $tmp["cat"] = $task["cat"];
+                $tmp["val"] = $task["val"];
+                array_push($response["revData"], $tmp);
+            }
+            // looping through result and preparing names array
+            /*while ($task = $result1->fetch_assoc()) {
+                $response["comment"] = $task["comment"];
+                $response["TO"] = $task["time"];
+            }*/
+        }
+        echoResponse(200, $response);
+    }
+    else{
+        $response["error"] = true;
+        $response["message"]="Invalid Revision data request url";
+        echoResponse(200, $response);
+    }
+}
+
+
+
 /*
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: PUT, GET, POST, DELETE, OPTIONS');

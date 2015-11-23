@@ -24,6 +24,7 @@ $app->delete('/generatorshares/:genID','deleteAGeneratorShares');
 $app->post('/generatorshares/:genID','updateAGeneratorShares');
 $app->get('/generatorRevisionNumbers/:genID','getAGenRevisionNumbers');
 $app->get('/generatorRevisionNumbers/:date/:genID','getADateGenRevisionNumbers');
+$app->get('/generatorRevisionNumbers/:date/:genID/:id','getADateGenRevisionNumberSpecific');
 $app->get('/revisions/:revID','getARevision');
 $app->get('/revisions/:genID/:revID','getAGenRevision');
 $app->get('/revisions/:date/:genID/:revID','getADateGenRevision');
@@ -236,6 +237,26 @@ function getADateGenRevisionNumbers($date, $genID){
     $db = new DbHandler();
     // fetching all users with a particular name
     $result = $db->getADateGenRevisionNumbersData($date, $genID);
+    if(gettype($result)=="string") {
+        $response["error"] = true;
+        $response["message"]=$result;
+    }
+    else{
+        $response["error"] = false;
+        $response["revisionNumbers"] = array();
+        // looping through result and preparing names array
+        while ($task = $result->fetch_assoc()) {
+            array_push($response["revisionNumbers"], $task["id"]);
+        }
+    }
+    echoResponse(200, $response);
+}
+
+function getADateGenRevisionNumberSpecific($date, $genID, $id){
+    $response = array();
+    $db = new DbHandler();
+    // fetching all users with a particular name
+    $result = $db->getADateGenRevisionNumberSpecificData($date, $genID, $id);
     if(gettype($result)=="string") {
         $response["error"] = true;
         $response["message"]=$result;

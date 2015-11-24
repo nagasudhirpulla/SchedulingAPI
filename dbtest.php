@@ -431,19 +431,24 @@ class DbHandler {
      * Get all Revision Numbers relating to a particular generator ID
      * @param String $namestr of Generator
      */
-    public function getADateGenRevisionNumberSpecificData($date, $genID, $id) {
-        //TODO complete this function
-        try {
-            $sql = "SELECT DISTINCT id FROM revisions WHERE g_id=? AND date=? ORDER BY id ASC";
-            $stmt = $this->conn->prepare($sql);
-            $stmt->bind_param("ss", $genID, $date);
-            $stmt->execute();
-            $results = $stmt->get_result();
-            $stmt->close();
-            return $results;
+    public function getADateGenRevisionNumberSpecificData($date, $genID, $id, $str) {
+        if($str=='next') {
+            //returns the next revision number that saves info about this generator with a particular date and revision number
+            try {
+                $sql = "SELECT MIN(id) AS prac FROM revisions WHERE id>? AND g_id=? AND date=?";
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bind_param("sss", $id, $genID, $date);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $stmt->close();
+                $practicalID = $result->fetch_assoc()['prac'];
+                return $practicalID;
+            } catch (Exception $e) {
+                return $e->getMessage();
+            }
         }
-        catch(Exception $e){
-            return $e->getMessage();
+        else{
+            return null;
         }
     }
 
